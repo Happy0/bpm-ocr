@@ -1,0 +1,9 @@
+[package]
+name = "rust-blood-pressure-monitor-ocr"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+imageproc = "0.25.0"
+opencv = "0.97.2"
+tokio = {version = "1.48.0", features = ["full"] }
