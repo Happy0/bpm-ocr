@@ -12,6 +12,13 @@ pub struct BloodPressureReading {
     pulse: u8
 }
 
+struct RectangleCoordinates {
+    topLeft: Point,
+    topRight: Point,
+    bottomLeft: Point,
+    bottomRight: Point
+}
+
 #[derive(Clone, Debug)]
 struct LcdScreenCandidate {
     coordinates: Vector<Point>,
@@ -58,8 +65,24 @@ fn get_lcd_candidates(contours: &Vector<Vector<Point>>) -> Result<Vec<LcdScreenC
     return Ok(result);
 }
 
-fn extract_lcd(led_screen_candidate: &LcdScreenCandidate) -> Mat {
+// Extracts only the LCD screen and transforms the image to a top down view of it
+fn extract_lcd_birdseye_view(led_screen_candidate: &LcdScreenCandidate) -> Result<Mat,Error> {
     panic!("panik")
+}
+
+fn get_rectangle_coordinates(lcd_screen_candidate: &LcdScreenCandidate) -> Option<RectangleCoordinates> {
+    match lcd_screen_candidate.coordinates.as_slice() {
+        [tr,tl,bl,br] => {
+            Some(RectangleCoordinates {
+                bottomLeft: *bl,
+                bottomRight: *br,
+                topLeft: *tl,
+                topRight: *tr
+            })
+        },
+        _ => None
+    }
+
 }
 
 pub async fn get_reading_from_file(filename: &str) -> Result<(), Error> {
