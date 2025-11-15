@@ -2,7 +2,7 @@ use imageproc::drawing::{draw_polygon, draw_polygon_mut};
 use opencv::imgproc::{approx_poly_dp, arc_length, draw_contours, fill_poly_def, rectangle_def};
 use opencv::{imgcodecs, imgproc};
 use opencv::imgcodecs::ImreadModes;
-use opencv::core::{Mat, MatTraitConstManual, Point, Rect, Size, UMat, Vector};
+use opencv::core::{Mat, MatTraitConstManual, Point, Rect, Size, UMat, Vector, VectorToVec};
 use opencv::Error;
 use opencv::highgui;
 
@@ -12,6 +12,7 @@ pub struct BloodPressureReading {
     pulse: u8
 }
 
+#[derive(Clone, Debug)]
 struct LedScreenCandidate {
     coordinates: Vector<Point>,
     area: f64
@@ -39,18 +40,23 @@ fn get_led_candidate_points(contour: &Vector<Point>) -> Result<Option<LedScreenC
 }
 
 fn get_led_candidates(contours: &Vector<Vector<Point>>) -> Result<Vec<LedScreenCandidate>, Error> {
-    let mut result: Vec<LedScreenCandidate> = Vec::new();
-    for contour in contours {
-        let led_candidate_points = get_led_candidate_points(&contour)?;
 
-        match led_candidate_points {
-            None => {},
-            Some(points) => result.push(points)
-        }
-    }
+    let candidate_results: Vec<Result<Option<LedScreenCandidate>,Error>> = 
+        contours.to_vec().iter().map(|points|  get_led_candidate_points(points))
+        .collect();
+
+    let candidates_or_error: Result<Vec<Option<LedScreenCandidate>>, Error> = candidate_results.into_iter().collect();
+
+    let candidates = candidates_or_error?;
+
+    let result: Vec<LedScreenCandidate> = candidates.iter()
+        .into_iter()
+        .filter_map(Option::as_ref)
+        .cloned()
+        .collect();
+    
     return Ok(result);
 }
-
 
 pub async fn get_reading_from_file(filename: &str) -> Result<(), Error> {
 
