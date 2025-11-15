@@ -12,7 +12,12 @@ pub struct BloodPressureReading {
     pulse: u8
 }
 
-fn get_led_candidate_points(contour: &Vector<Point>) -> Result<Option<Vector<Point>>,Error> {
+struct LedScreenCandidate {
+    coordinates: Vector<Point>,
+    area: f64
+}
+
+fn get_led_candidate_points(contour: &Vector<Point>) -> Result<Option<LedScreenCandidate>,Error> {
     let mut approx_curv_output: Vector<Point> = Vector::new();
 
     let perimeter = arc_length(&contour, true)?;
@@ -20,14 +25,21 @@ fn get_led_candidate_points(contour: &Vector<Point>) -> Result<Option<Vector<Poi
     approx_poly_dp(&contour, &mut approx_curv_output, 0.02 * perimeter,true)?;
 
     if (approx_curv_output.len() == 4) {
-        return Ok(Some(approx_curv_output));
+        let area = imgproc::contour_area(&approx_curv_output, true)?;
+
+        let result = LedScreenCandidate {
+            coordinates: approx_curv_output,
+            area: area
+        };
+
+        return Ok(Some(result));
     } else {
         return Ok(None)
     }
 }
 
-fn get_led_candidates(contours: &Vector<Vector<Point>>) -> Result<Vector<Vector<Point>>, Error> {
-    let mut result: Vector<Vector<Point>> = Vector::new();
+fn get_led_candidates(contours: &Vector<Vector<Point>>) -> Result<Vec<LedScreenCandidate>, Error> {
+    let mut result: Vec<LedScreenCandidate> = Vec::new();
     for contour in contours {
         let led_candidate_points = get_led_candidate_points(&contour)?;
 
@@ -58,13 +70,27 @@ pub async fn get_reading_from_file(filename: &str) -> Result<(), Error> {
 
     let mut contours_output : Vector<Vector<Point>> = Vector::new();
     imgproc::find_contours(&edges, &mut contours_output, imgproc::RETR_EXTERNAL, imgproc::CHAIN_APPROX_SIMPLE, Point::new(0,0))?;
+    
+    let mut led_candidates = get_led_candidates(&contours_output)?;
+    led_candidates.sort_by(|a1,a2| a1.area.total_cmp(&a2.area) );
 
-    let led_candidates = get_led_candidates(&contours_output)?;
+    println!("Num candidates: {0}", led_candidates.len());
 
-    for led_candidate in led_candidates {
-        fill_poly_def(&mut resized_image, &led_candidate, (255,0,0).into())?
+    let best_candidate_led = led_candidates.get(0);
+
+    match best_candidate_led {
+        Some(candidate) => {
+            fill_poly_def(&mut resized_image, &candidate.coordinates, (255,0,0).into())?
+        }
+        None => println!("Aw naw, nae candidates")
     }
 
+
+    // for led_candidate in led_candidates {
+        
+
+    //     fill_poly_def(&mut resized_image, &led_candidate, (255,0,0).into())?
+    // }
 
 
     highgui::imshow("testaroonie", &resized_image);
