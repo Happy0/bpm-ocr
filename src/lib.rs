@@ -1,8 +1,8 @@
 use imageproc::drawing::{draw_polygon, draw_polygon_mut};
-use opencv::imgproc::{approx_poly_dp, arc_length, draw_contours, fill_poly_def, rectangle_def};
+use opencv::imgproc::{approx_poly_dp, arc_length, draw_contours, fill_poly_def, get_perspective_transform, get_perspective_transform_def, rectangle_def};
 use opencv::{imgcodecs, imgproc};
 use opencv::imgcodecs::ImreadModes;
-use opencv::core::{Mat, MatTraitConstManual, Point, Rect, Size, UMat, Vector, VectorToVec};
+use opencv::core::{DECOMP_LU, Mat, MatTrait, MatTraitConst, MatTraitConstManual, Point, Rect, Size, UMat, Vector, VectorToVec};
 use opencv::Error;
 use opencv::highgui;
 
@@ -13,12 +13,12 @@ pub struct BloodPressureReading {
 }
 
 #[derive(Clone, Debug)]
-struct LedScreenCandidate {
+struct LcdScreenCandidate {
     coordinates: Vector<Point>,
     area: f64
 }
 
-fn get_led_candidate_points(contour: &Vector<Point>) -> Result<Option<LedScreenCandidate>,Error> {
+fn get_lcd_candidate_points(contour: &Vector<Point>) -> Result<Option<LcdScreenCandidate>,Error> {
     let mut approx_curv_output: Vector<Point> = Vector::new();
 
     let perimeter = arc_length(&contour, true)?;
@@ -28,7 +28,7 @@ fn get_led_candidate_points(contour: &Vector<Point>) -> Result<Option<LedScreenC
     if (approx_curv_output.len() == 4) {
         let area = imgproc::contour_area(&approx_curv_output, true)?;
 
-        let result = LedScreenCandidate {
+        let result = LcdScreenCandidate {
             coordinates: approx_curv_output,
             area: area
         };
@@ -39,23 +39,27 @@ fn get_led_candidate_points(contour: &Vector<Point>) -> Result<Option<LedScreenC
     }
 }
 
-fn get_led_candidates(contours: &Vector<Vector<Point>>) -> Result<Vec<LedScreenCandidate>, Error> {
+fn get_lcd_candidates(contours: &Vector<Vector<Point>>) -> Result<Vec<LcdScreenCandidate>, Error> {
 
-    let candidate_results: Vec<Result<Option<LedScreenCandidate>,Error>> = 
-        contours.to_vec().iter().map(|points|  get_led_candidate_points(points))
+    let candidate_results: Vec<Result<Option<LcdScreenCandidate>,Error>> = 
+        contours.to_vec().iter().map(|points|  get_lcd_candidate_points(points))
         .collect();
 
-    let candidates_or_error: Result<Vec<Option<LedScreenCandidate>>, Error> = candidate_results.into_iter().collect();
+    let candidates_or_error: Result<Vec<Option<LcdScreenCandidate>>, Error> = candidate_results.into_iter().collect();
 
     let candidates = candidates_or_error?;
 
-    let result: Vec<LedScreenCandidate> = candidates.iter()
+    let result: Vec<LcdScreenCandidate> = candidates.iter()
         .into_iter()
         .filter_map(Option::as_ref)
         .cloned()
         .collect();
     
     return Ok(result);
+}
+
+fn extract_lcd(led_screen_candidate: &LcdScreenCandidate) -> Mat {
+    panic!("panik")
 }
 
 pub async fn get_reading_from_file(filename: &str) -> Result<(), Error> {
@@ -77,20 +81,24 @@ pub async fn get_reading_from_file(filename: &str) -> Result<(), Error> {
     let mut contours_output : Vector<Vector<Point>> = Vector::new();
     imgproc::find_contours(&edges, &mut contours_output, imgproc::RETR_EXTERNAL, imgproc::CHAIN_APPROX_SIMPLE, Point::new(0,0))?;
     
-    let mut led_candidates = get_led_candidates(&contours_output)?;
+    let mut led_candidates = get_lcd_candidates(&contours_output)?;
     led_candidates.sort_by(|a1,a2| a1.area.total_cmp(&a2.area) );
-
-    println!("Num candidates: {0}", led_candidates.len());
 
     let best_candidate_led = led_candidates.get(0);
 
     match best_candidate_led {
         Some(candidate) => {
-            fill_poly_def(&mut resized_image, &candidate.coordinates, (255,0,0).into())?
-        }
-        None => println!("Aw naw, nae candidates")
-    }
+            
+            println!("{:?}", candidate.coordinates);
 
+            println!("aahhhh");
+            fill_poly_def(&mut resized_image, &candidate.coordinates, (255,0,0).into())?;
+            highgui::imshow("testaroonie", &resized_image);
+            let x = highgui::wait_key(0)?;
+            highgui::destroy_all_windows()
+        }
+        None => Ok(println!("Aw naw, nae candidates"))
+    }
 
     // for led_candidate in led_candidates {
         
@@ -99,7 +107,5 @@ pub async fn get_reading_from_file(filename: &str) -> Result<(), Error> {
     // }
 
 
-    highgui::imshow("testaroonie", &resized_image);
-    let x = highgui::wait_key(0)?;
-    highgui::destroy_all_windows()
+
 }
