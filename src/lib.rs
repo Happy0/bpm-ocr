@@ -1,11 +1,11 @@
 use std::cmp::max;
 
 use imageproc::drawing::{draw_polygon, draw_polygon_mut};
-use opencv::imgproc::{approx_poly_dp, arc_length, draw_contours, fill_poly_def, get_perspective_transform, get_perspective_transform_def, rectangle_def};
+use opencv::imgproc::{approx_poly_dp, arc_length, draw_contours, fill_poly_def, get_perspective_transform, get_perspective_transform_def, rectangle_def, warp_perspective, warp_perspective_def};
 use opencv::prelude::ImgHashBaseTraitConst;
 use opencv::{imgcodecs, imgproc};
 use opencv::imgcodecs::ImreadModes;
-use opencv::core::{DECOMP_LU, Mat, MatTrait, MatTraitConst, MatTraitConstManual, Point, Rect, Size, UMat, Vector, VectorToVec};
+use opencv::core::{DECOMP_LU, Mat, MatTrait, MatTraitConst, MatTraitConstManual, Point, Point2f, Rect, Size, UMat, Vector, VectorToVec};
 use opencv::Error;
 use opencv::highgui;
 
@@ -109,8 +109,30 @@ fn extract_lcd_birdseye_view(image: &Mat, led_coordinates: RectangleCoordinates)
     
     let max_height = max(height_bottom, height_top);
 
+    let src_points: Vector<Point2f> = Vector::from_slice(&[
+        Point2f::new(led_coordinates.topLeft.x as f32, led_coordinates.topLeft.y as f32),
+        Point2f::new(led_coordinates.topRight.x as f32, led_coordinates.topRight.y as f32),
+        Point2f::new(led_coordinates.bottomRight.x as f32, led_coordinates.bottomRight.y as f32),
+        Point2f::new(led_coordinates.bottomLeft.x as f32, led_coordinates.bottomLeft.y as f32),
+]);
 
-    panic!("panik")
+    let dest_points: Vector<Point2f> = Vector::from_slice(&[
+        Point2f::new(0., 0.),
+        Point2f::new(max_width as f32 -1.0, 0.),
+        Point2f::new(max_width as f32 -1.0, max_height as f32 -1.0),
+        Point2f::new(0., max_height as f32 -1.0)
+    ]);
+
+    let src_points_mat = Mat::from_slice(src_points.as_slice())?;
+    let dest_points_mat = Mat::from_slice(dest_points.as_slice())?;
+
+    let M = get_perspective_transform_def(&src_points_mat, &dest_points_mat)?;
+
+    let mut dest_image = Mat::default();
+
+    warp_perspective_def(&src_points_mat, &mut dest_image, &M, Size::new(max_width, max_height))?;
+
+    Ok(dest_image)
 }
 
 fn locate_corners(points: (Point, Point, Point, Point)) -> RectangleCoordinates {
@@ -172,11 +194,12 @@ pub async fn get_reading_from_file(filename: &str) -> Result<(), ProcessingError
     let lcd_coordinates = get_rectangle_coordinates(best_candidate_led)
         .map_err(ProcessingError::AppError)?;
 
-    println!("{:?}", &lcd_coordinates);
+    let warped_image = extract_lcd_birdseye_view(&resized_image, lcd_coordinates)?;
+
 
     println!("aahhhh");
-    fill_poly_def(&mut resized_image, &best_candidate_led.coordinates, (255,0,0).into())?;
-    highgui::imshow("testaroonie", &resized_image);
+    //fill_poly_def(&mut resized_image, &best_candidate_led.coordinates, (255,0,0).into())?;
+    highgui::imshow("testaroonie", &warped_image);
     let x = highgui::wait_key(0)?;
     
     highgui::destroy_all_windows();
