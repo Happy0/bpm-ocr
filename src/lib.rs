@@ -1,3 +1,5 @@
+use std::cmp::max;
+
 use imageproc::drawing::{draw_polygon, draw_polygon_mut};
 use opencv::imgproc::{approx_poly_dp, arc_length, draw_contours, fill_poly_def, get_perspective_transform, get_perspective_transform_def, rectangle_def};
 use opencv::prelude::ImgHashBaseTraitConst;
@@ -91,6 +93,21 @@ fn get_lcd_candidates(contours: &Vector<Vector<Point>>) -> Result<Vec<LcdScreenC
 // Extracts only the LCD screen and transforms the image to a top down view of it
 fn extract_lcd_birdseye_view(image: &Mat, led_coordinates: RectangleCoordinates) -> Result<Mat,Error> {
 
+    let width_bottom = 
+        ((led_coordinates.bottomRight.x - led_coordinates.bottomLeft.x).pow(2) +  (led_coordinates.bottomRight.y - led_coordinates.bottomLeft.y).pow(2)).isqrt();
+
+    let width_top = 
+        ((led_coordinates.topRight.x - led_coordinates.topLeft.x).pow(2) +  (led_coordinates.topRight.y - led_coordinates.topLeft.y).pow(2)).isqrt();
+    
+    let max_width = max(width_bottom, width_top);
+
+    let height_bottom = 
+        ((led_coordinates.topRight.x - led_coordinates.bottomRight.x).pow(2) +  (led_coordinates.topRight.y - led_coordinates.bottomRight.y).pow(2)).isqrt();
+
+    let height_top = 
+        ((led_coordinates.topLeft.x - led_coordinates.bottomLeft.x).pow(2) +  (led_coordinates.topLeft.y - led_coordinates.bottomLeft.y).pow(2)).isqrt();
+    
+    let max_height = max(height_bottom, height_top);
 
 
     panic!("panik")
