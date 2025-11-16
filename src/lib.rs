@@ -6,12 +6,34 @@ use opencv::core::{DECOMP_LU, Mat, MatTrait, MatTraitConst, MatTraitConstManual,
 use opencv::Error;
 use opencv::highgui;
 
+#[derive(Clone, Debug)]
+pub enum ProblemIdentifyingReadings {
+    InternalError(String),
+    CouldNotIdentifyReadings,
+    CouldNotIdentityLCDCandidate
+}
+
+#[derive(Debug)]
+pub enum ProcessingError {
+    ImageDetectionLibraryError(Error),
+    AppError(ProblemIdentifyingReadings)
+}
+
+impl From<Error> for ProcessingError {
+    fn from(error: Error) -> Self {
+        return {
+            Self::ImageDetectionLibraryError(error)
+        }
+    }
+}
+
 pub struct BloodPressureReading {
     systolic: u8,
     diastolic: u8,
     pulse: u8
 }
 
+#[derive(Clone, Debug)]
 struct RectangleCoordinates {
     topLeft: Point,
     topRight: Point,
@@ -62,7 +84,7 @@ fn get_lcd_candidates(contours: &Vector<Vector<Point>>) -> Result<Vec<LcdScreenC
         .cloned()
         .collect();
     
-    return Ok(result);
+    Ok(result)
 }
 
 // Extracts only the LCD screen and transforms the image to a top down view of it
@@ -70,22 +92,22 @@ fn extract_lcd_birdseye_view(led_screen_candidate: &LcdScreenCandidate) -> Resul
     panic!("panik")
 }
 
-fn get_rectangle_coordinates(lcd_screen_candidate: &LcdScreenCandidate) -> Option<RectangleCoordinates> {
+fn get_rectangle_coordinates(lcd_screen_candidate: &LcdScreenCandidate) -> Result<RectangleCoordinates, ProblemIdentifyingReadings> {
     match lcd_screen_candidate.coordinates.as_slice() {
         [tr,tl,bl,br] => {
-            Some(RectangleCoordinates {
+            Ok(RectangleCoordinates {
                 bottomLeft: *bl,
                 bottomRight: *br,
                 topLeft: *tl,
                 topRight: *tr
             })
         },
-        _ => None
+        _ => {Err(ProblemIdentifyingReadings::InternalError("Internal error: LCD candidate did not have 4 points as expected".to_string()))}
     }
 
 }
 
-pub async fn get_reading_from_file(filename: &str) -> Result<(), Error> {
+pub async fn get_reading_from_file(filename: &str) -> Result<(), ProcessingError> {
 
     let gray_scale_mode: i32 = ImreadModes::IMREAD_GRAYSCALE.into();
     let image = imgcodecs::imread(filename, gray_scale_mode)?;
@@ -107,27 +129,24 @@ pub async fn get_reading_from_file(filename: &str) -> Result<(), Error> {
     let mut led_candidates = get_lcd_candidates(&contours_output)?;
     led_candidates.sort_by(|a1,a2| a1.area.total_cmp(&a2.area) );
 
-    let best_candidate_led = led_candidates.get(0);
+    let best_candidate_led: &LcdScreenCandidate = led_candidates.get(0).ok_or_else(||
+        ProcessingError::AppError(ProblemIdentifyingReadings::CouldNotIdentityLCDCandidate)
+    )?;
 
-    match best_candidate_led {
-        Some(candidate) => {
+    let lcd_coordinates = get_rectangle_coordinates(best_candidate_led)
+        .map_err(ProcessingError::AppError)?;
+    
             
-            println!("{:?}", candidate.coordinates);
+    println!("{:?}", &lcd_coordinates);
 
-            println!("aahhhh");
-            fill_poly_def(&mut resized_image, &candidate.coordinates, (255,0,0).into())?;
-            highgui::imshow("testaroonie", &resized_image);
-            let x = highgui::wait_key(0)?;
-            highgui::destroy_all_windows()
-        }
-        None => Ok(println!("Aw naw, nae candidates"))
-    }
+    println!("aahhhh");
+    fill_poly_def(&mut resized_image, &best_candidate_led.coordinates, (255,0,0).into())?;
+    highgui::imshow("testaroonie", &resized_image);
+    let x = highgui::wait_key(0)?;
+    
+    highgui::destroy_all_windows();
 
-    // for led_candidate in led_candidates {
-        
-
-    //     fill_poly_def(&mut resized_image, &led_candidate, (255,0,0).into())?
-    // }
+    Ok(())
 
 
 
