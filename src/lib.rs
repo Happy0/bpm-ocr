@@ -123,6 +123,9 @@ fn extract_lcd_birdseye_view(image: &Mat, led_coordinates: RectangleCoordinates)
         Point2f::new(0., max_height as f32 -1.0)
     ]);
 
+    println!("src points: ${:?}", src_points);
+    println!("dest points: ${:?}", dest_points);
+
     let src_points_mat = Mat::from_slice(src_points.as_slice())?;
     let dest_points_mat = Mat::from_slice(dest_points.as_slice())?;
 
@@ -130,7 +133,7 @@ fn extract_lcd_birdseye_view(image: &Mat, led_coordinates: RectangleCoordinates)
 
     let mut dest_image = Mat::default();
 
-    warp_perspective_def(&src_points_mat, &mut dest_image, &M, Size::new(max_width, max_height))?;
+    warp_perspective_def(&image, &mut dest_image, &M, Size::new(max_width, max_height))?;
 
     Ok(dest_image)
 }
