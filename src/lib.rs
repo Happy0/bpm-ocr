@@ -1,5 +1,6 @@
 use imageproc::drawing::{draw_polygon, draw_polygon_mut};
 use opencv::imgproc::{approx_poly_dp, arc_length, draw_contours, fill_poly_def, get_perspective_transform, get_perspective_transform_def, rectangle_def};
+use opencv::prelude::ImgHashBaseTraitConst;
 use opencv::{imgcodecs, imgproc};
 use opencv::imgcodecs::ImreadModes;
 use opencv::core::{DECOMP_LU, Mat, MatTrait, MatTraitConst, MatTraitConstManual, Point, Rect, Size, UMat, Vector, VectorToVec};
@@ -88,19 +89,37 @@ fn get_lcd_candidates(contours: &Vector<Vector<Point>>) -> Result<Vec<LcdScreenC
 }
 
 // Extracts only the LCD screen and transforms the image to a top down view of it
-fn extract_lcd_birdseye_view(led_screen_candidate: &LcdScreenCandidate) -> Result<Mat,Error> {
+fn extract_lcd_birdseye_view(image: &Mat, led_coordinates: RectangleCoordinates) -> Result<Mat,Error> {
+
+
+
     panic!("panik")
+}
+
+fn locate_corners(points: (Point, Point, Point, Point)) -> RectangleCoordinates {
+    let (p1,p2,p3,p4) = points;
+    let mut point_array = [p1,p2,p3,p4];
+
+    point_array
+        .sort_by(|point1, point2|  (point1.x + point1.y).cmp(&(point2.x + point2.y)));
+
+    match point_array {
+        [p1,p2,p3,p4] => {
+            let top_left = p1;
+            let bottom_right = p4;
+            let (bottom_left, top_right) = if (p2.x < p3.x) {(p2, p3)} else {(p3, p2)};
+
+            return RectangleCoordinates { topLeft: top_left, topRight: top_right, bottomLeft: bottom_left, bottomRight: bottom_right }
+        }
+    }
 }
 
 fn get_rectangle_coordinates(lcd_screen_candidate: &LcdScreenCandidate) -> Result<RectangleCoordinates, ProblemIdentifyingReadings> {
     match lcd_screen_candidate.coordinates.as_slice() {
-        [tr,tl,bl,br] => {
-            Ok(RectangleCoordinates {
-                bottomLeft: *bl,
-                bottomRight: *br,
-                topLeft: *tl,
-                topRight: *tr
-            })
+        [p1,p2,p3,p4] => {
+            let coordinates = locate_corners((*p1,*p2,*p3,*p4));
+
+            Ok(coordinates)
         },
         _ => {Err(ProblemIdentifyingReadings::InternalError("Internal error: LCD candidate did not have 4 points as expected".to_string()))}
     }
@@ -135,8 +154,7 @@ pub async fn get_reading_from_file(filename: &str) -> Result<(), ProcessingError
 
     let lcd_coordinates = get_rectangle_coordinates(best_candidate_led)
         .map_err(ProcessingError::AppError)?;
-    
-            
+
     println!("{:?}", &lcd_coordinates);
 
     println!("aahhhh");
