@@ -2,39 +2,17 @@ use std::cmp::max;
 
 use imageproc::drawing::{draw_polygon, draw_polygon_mut};
 use opencv::imgproc::{approx_poly_dp, arc_length, draw_contours, fill_poly_def, get_perspective_transform, get_perspective_transform_def, rectangle_def, warp_perspective, warp_perspective_def};
-use opencv::prelude::ImgHashBaseTraitConst;
 use opencv::{imgcodecs, imgproc};
 use opencv::imgcodecs::ImreadModes;
 use opencv::core::{DECOMP_LU, Mat, MatTrait, MatTraitConst, MatTraitConstManual, Point, Point2f, Rect, Size, UMat, Vector, VectorToVec};
 use opencv::Error;
 use opencv::highgui;
 
-#[derive(Clone, Debug)]
-pub enum ProblemIdentifyingReadings {
-    InternalError(String),
-    CouldNotIdentifyReadings,
-    CouldNotIdentityLCDCandidate
-}
+use crate::lcd_number_extractor::extract_readings;
+use crate::models::{ProblemIdentifyingReadings, ProcessingError};
+mod models;
+mod lcd_number_extractor;
 
-#[derive(Debug)]
-pub enum ProcessingError {
-    ImageDetectionLibraryError(Error),
-    AppError(ProblemIdentifyingReadings)
-}
-
-impl From<Error> for ProcessingError {
-    fn from(error: Error) -> Self {
-        return {
-            Self::ImageDetectionLibraryError(error)
-        }
-    }
-}
-
-pub struct BloodPressureReading {
-    systolic: u8,
-    diastolic: u8,
-    pulse: u8
-}
 
 #[derive(Clone, Debug)]
 struct RectangleCoordinates {
@@ -163,7 +141,7 @@ fn get_rectangle_coordinates(lcd_screen_candidate: &LcdScreenCandidate) -> Resul
 
             Ok(coordinates)
         },
-        _ => {Err(ProblemIdentifyingReadings::InternalError("Internal error: LCD candidate did not have 4 points as expected".to_string()))}
+        _ => {Err(models::ProblemIdentifyingReadings::InternalError("Internal error: LCD candidate did not have 4 points as expected".to_string()))}
     }
 
 }
@@ -197,12 +175,12 @@ pub async fn get_reading_from_file(filename: &str) -> Result<(), ProcessingError
     let lcd_coordinates = get_rectangle_coordinates(best_candidate_led)
         .map_err(ProcessingError::AppError)?;
 
-    let warped_image = extract_lcd_birdseye_view(&resized_image, lcd_coordinates)?;
-
+    let birdseye_lcd_only = extract_lcd_birdseye_view(&resized_image, lcd_coordinates)?;
+    //let readings = extract_readings(&birdseye_lcd_only)?;
 
     println!("aahhhh");
     //fill_poly_def(&mut resized_image, &best_candidate_led.coordinates, (255,0,0).into())?;
-    highgui::imshow("testaroonie", &warped_image);
+    highgui::imshow("testaroonie", &birdseye_lcd_only);
     let x = highgui::wait_key(0)?;
     
     highgui::destroy_all_windows();
