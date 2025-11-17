@@ -176,11 +176,12 @@ pub async fn get_reading_from_file(filename: &str) -> Result<(), ProcessingError
         .map_err(ProcessingError::AppError)?;
 
     let birdseye_lcd_only = extract_lcd_birdseye_view(&resized_image, lcd_coordinates)?;
-    //let readings = extract_readings(&birdseye_lcd_only)?;
+    let digits = extract_readings(&birdseye_lcd_only)?;
 
     println!("aahhhh");
     //fill_poly_def(&mut resized_image, &best_candidate_led.coordinates, (255,0,0).into())?;
-    highgui::imshow("testaroonie", &birdseye_lcd_only);
+    highgui::imshow("testaroonie", &digits);
+    
     let x = highgui::wait_key(0)?;
     
     highgui::destroy_all_windows();
