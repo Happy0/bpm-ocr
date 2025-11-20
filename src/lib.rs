@@ -63,26 +63,26 @@ fn get_lcd_candidates(contours: &Vector<Vector<Point>>) -> Result<Vec<LcdScreenC
 fn extract_lcd_birdseye_view(image: &Mat, led_coordinates: models::RectangleCoordinates) -> Result<Mat,Error> {
 
     let width_bottom = 
-        ((led_coordinates.bottomRight.x - led_coordinates.bottomLeft.x).pow(2) +  (led_coordinates.bottomRight.y - led_coordinates.bottomLeft.y).pow(2)).isqrt();
+        ((led_coordinates.bottom_right.x - led_coordinates.bottom_left.x).pow(2) +  (led_coordinates.bottom_right.y - led_coordinates.bottom_left.y).pow(2)).isqrt();
 
     let width_top = 
-        ((led_coordinates.topRight.x - led_coordinates.topLeft.x).pow(2) +  (led_coordinates.topRight.y - led_coordinates.topLeft.y).pow(2)).isqrt();
+        ((led_coordinates.top_right.x - led_coordinates.top_left.x).pow(2) +  (led_coordinates.top_right.y - led_coordinates.top_left.y).pow(2)).isqrt();
     
     let max_width = max(width_bottom, width_top);
 
     let height_bottom = 
-        ((led_coordinates.topRight.x - led_coordinates.bottomRight.x).pow(2) +  (led_coordinates.topRight.y - led_coordinates.bottomRight.y).pow(2)).isqrt();
+        ((led_coordinates.top_right.x - led_coordinates.bottom_right.x).pow(2) +  (led_coordinates.top_right.y - led_coordinates.bottom_right.y).pow(2)).isqrt();
 
     let height_top = 
-        ((led_coordinates.topLeft.x - led_coordinates.bottomLeft.x).pow(2) +  (led_coordinates.topLeft.y - led_coordinates.bottomLeft.y).pow(2)).isqrt();
+        ((led_coordinates.top_left.x - led_coordinates.bottom_left.x).pow(2) +  (led_coordinates.top_left.y - led_coordinates.bottom_left.y).pow(2)).isqrt();
     
     let max_height = max(height_bottom, height_top);
 
     let src_points: Vector<Point2f> = Vector::from_slice(&[
-        Point2f::new(led_coordinates.topLeft.x as f32, led_coordinates.topLeft.y as f32),
-        Point2f::new(led_coordinates.topRight.x as f32, led_coordinates.topRight.y as f32),
-        Point2f::new(led_coordinates.bottomRight.x as f32, led_coordinates.bottomRight.y as f32),
-        Point2f::new(led_coordinates.bottomLeft.x as f32, led_coordinates.bottomLeft.y as f32),
+        Point2f::new(led_coordinates.top_left.x as f32, led_coordinates.top_left.y as f32),
+        Point2f::new(led_coordinates.top_right.x as f32, led_coordinates.top_right.y as f32),
+        Point2f::new(led_coordinates.bottom_right.x as f32, led_coordinates.bottom_right.y as f32),
+        Point2f::new(led_coordinates.bottom_left.x as f32, led_coordinates.bottom_left.y as f32),
 ]);
 
     let dest_points: Vector<Point2f> = Vector::from_slice(&[
@@ -117,7 +117,7 @@ fn locate_corners(points: (Point, Point, Point, Point)) -> models::RectangleCoor
             let bottom_right = p4;
             let (bottom_left, top_right) = if p2.x < p3.x {(p2, p3)} else {(p3, p2)};
 
-            return models::RectangleCoordinates { topLeft: top_left, topRight: top_right, bottomLeft: bottom_left, bottomRight: bottom_right }
+            return models::RectangleCoordinates { top_left, top_right, bottom_left, bottom_right }
         }
     }
 }

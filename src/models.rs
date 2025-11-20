@@ -23,10 +23,10 @@ impl From<Error> for ProcessingError {
 
 #[derive(Clone, Debug)]
 pub struct RectangleCoordinates {
-    pub topLeft: Point,
-    pub topRight: Point,
-    pub bottomLeft: Point,
-    pub bottomRight: Point
+    pub top_left: Point,
+    pub top_right: Point,
+    pub bottom_left: Point,
+    pub bottom_right: Point
 }
 
 pub struct BloodPressureReading {
