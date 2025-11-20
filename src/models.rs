@@ -1,4 +1,4 @@
-use opencv::{Error, core::Point};
+use opencv::{Error, core::{Point, Rect2i}};
 
 #[derive(Clone, Debug)]
 pub enum ProblemIdentifyingReadings {
@@ -22,11 +22,15 @@ impl From<Error> for ProcessingError {
 }
 
 #[derive(Clone, Debug)]
-pub struct RectangleCoordinates {
+pub(crate) struct RectangleCoordinates {
     pub top_left: Point,
     pub top_right: Point,
     pub bottom_left: Point,
     pub bottom_right: Point
+}
+
+pub(crate) struct LcdNumberGroup {
+    digits: Vec<Rect2i>
 }
 
 pub struct BloodPressureReading {
