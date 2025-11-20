@@ -1,9 +1,9 @@
 use std::cmp::max;
 
-use opencv::imgproc::{approx_poly_dp, arc_length, get_perspective_transform_def, rectangle_def, warp_perspective, warp_perspective_def};
+use opencv::imgproc::{approx_poly_dp, arc_length, get_perspective_transform_def, warp_perspective_def};
 use opencv::{imgcodecs, imgproc};
 use opencv::imgcodecs::ImreadModes;
-use opencv::core::{DECOMP_LU, Mat, MatTrait, MatTraitConst, MatTraitConstManual, Point, Point2f, Rect, Size, UMat, Vector, VectorToVec};
+use opencv::core::{Mat, MatTraitConstManual, Point, Point2f, Size, UMat, Vector, VectorToVec};
 use opencv::Error;
 use opencv::highgui;
 
@@ -25,7 +25,7 @@ fn get_lcd_candidate_points(contour: &Vector<Point>) -> Result<Option<LcdScreenC
 
     approx_poly_dp(&contour, &mut approx_curv_output, 0.02 * perimeter,true)?;
 
-    if (approx_curv_output.len() == 4) {
+    if approx_curv_output.len() == 4 {
         let area = imgproc::contour_area(&approx_curv_output, true)?;
 
         let result = LcdScreenCandidate {
@@ -115,7 +115,7 @@ fn locate_corners(points: (Point, Point, Point, Point)) -> models::RectangleCoor
         [p1,p2,p3,p4] => {
             let top_left = p1;
             let bottom_right = p4;
-            let (bottom_left, top_right) = if (p2.x < p3.x) {(p2, p3)} else {(p3, p2)};
+            let (bottom_left, top_right) = if p2.x < p3.x {(p2, p3)} else {(p3, p2)};
 
             return models::RectangleCoordinates { topLeft: top_left, topRight: top_right, bottomLeft: bottom_left, bottomRight: bottom_right }
         }
