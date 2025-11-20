@@ -3,7 +3,6 @@ use std::{collections::HashMap, hash::Hash};
 
 use opencv::{Error, core::{CV_8U, Mat, Point, Rect2i, Scalar, Size, Vector}, imgproc::{self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect, cvt_color_def, dilate_def, find_contours_def, get_structuring_element_def, morphology_ex_def, rectangle_def, threshold}};
 use crate::models::{ProcessingError, ReadingLocations};
-use itertools::Itertools;
 
 fn highlight_digits(image: &Mat) -> Result<Mat, ProcessingError> {
     let mut thresholed_image = Mat::default();
