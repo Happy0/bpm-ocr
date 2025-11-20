@@ -1,5 +1,5 @@
 
-use opencv::{Error, core::{CV_8U, Mat, MatTraitConst, Point, Rect, Rect2i, Scalar, Size, Vector}, imgproc::{self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect, cvt_color_def, dilate_def, draw_contours, draw_contours_def, find_contours, find_contours_def, get_structuring_element_def, morphology_ex_def, rectangle_def, threshold}, ximgproc::morphology_ex};
+use opencv::{Error, core::{CV_8U, Mat, Point, Rect2i, Scalar, Size, Vector}, imgproc::{self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect, cvt_color_def, dilate_def, draw_contours, draw_contours_def, find_contours, find_contours_def, get_structuring_element_def, morphology_ex_def, rectangle_def, threshold}, ximgproc::morphology_ex};
 use crate::models::{self, BloodPressureReading, ProcessingError};
 
 fn highlight_digits(image: &Mat) -> Result<Mat, ProcessingError> {
@@ -14,8 +14,8 @@ fn highlight_digits(image: &Mat) -> Result<Mat, ProcessingError> {
 
     let mut dilated_image = Mat::default();
 
+    // Fill in the gaps in the middle of the digits on the LCD screen to make it easier to identify the full digit
     let dilation_kernel = get_structuring_element_def(imgproc::MORPH_RECT, Size::new(6,4))?;
-
     dilate_def(&morphed_image, &mut dilated_image, &dilation_kernel)?;
 
     return Ok(dilated_image);
@@ -26,16 +26,21 @@ pub fn get_digit_borders(image:  &Mat) -> Result<Vec<Rect2i>, ProcessingError> {
     find_contours_def(image, &mut contours_output, imgproc::RETR_EXTERNAL, imgproc::CHAIN_APPROX_SIMPLE)?;
 
     let predicted_digits: Vec<Result<Rect2i, Error>> = contours_output.iter().map(|contour| {
-        let rect = bounding_rect(&contour);
-
-        //rect.map_or(false, |r| r.height > 5 && r.width > 5)
-        return rect;
+        return bounding_rect(&contour);
     }).collect();
 
-    let result: Result<Vec<Rect2i>, Error> = predicted_digits.into_iter().collect();
+    let possible_digits :Result<Vec<Rect2i>,Error> = predicted_digits.into_iter().collect();
 
-    let x = result?;
-    return Ok(x);
+    let x = possible_digits?;
+
+    // Filter out anything that is small enough to probably not be a digit
+    let result: Vec<Rect2i> = x
+        .iter()
+        .filter(|possible_digit| possible_digit.height > 30 )
+        .cloned()
+        .collect();
+
+    return Ok(result);
 }
 
 //pub fn extract_readings(image: &Mat) -> Result<Mat, BloodPressureReading> {
