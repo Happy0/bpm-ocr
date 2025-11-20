@@ -1,5 +1,5 @@
 
-use opencv::{Error, core::{CV_8U, Mat, MatTraitConst, Point, Rect, Rect2i, Scalar, Size, Vector}, imgproc::{self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect, cvt_color_def, draw_contours, draw_contours_def, find_contours, find_contours_def, get_structuring_element_def, morphology_ex_def, rectangle_def, threshold}, ximgproc::morphology_ex};
+use opencv::{Error, core::{CV_8U, Mat, MatTraitConst, Point, Rect, Rect2i, Scalar, Size, Vector}, imgproc::{self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect, cvt_color_def, dilate_def, draw_contours, draw_contours_def, find_contours, find_contours_def, get_structuring_element_def, morphology_ex_def, rectangle_def, threshold}, ximgproc::morphology_ex};
 use crate::models::{self, BloodPressureReading, ProcessingError};
 
 fn highlight_digits(image: &Mat) -> Result<Mat, ProcessingError> {
@@ -12,7 +12,13 @@ fn highlight_digits(image: &Mat) -> Result<Mat, ProcessingError> {
     let mut morphed_image = Mat::default();
     morphology_ex_def(&thresholed_image, &mut morphed_image, MORPH_OPEN, &kernel)?;
 
-    return Ok(morphed_image);
+    let mut dilated_image = Mat::default();
+
+    let dilation_kernel = get_structuring_element_def(imgproc::MORPH_RECT, Size::new(6,4))?;
+
+    dilate_def(&morphed_image, &mut dilated_image, &dilation_kernel)?;
+
+    return Ok(dilated_image);
 }
 
 pub fn get_digit_borders(image:  &Mat) -> Result<Vec<Rect2i>, ProcessingError> {
@@ -37,6 +43,8 @@ pub fn extract_readings(image: &Mat) -> Result<Mat, ProcessingError> {
     let highlighted_digits = highlight_digits(image)?;
 
     let digit_borders = get_digit_borders(&highlighted_digits)?;
+
+    println!("{:?}", digit_borders);
 
     let mut temp_image = Mat::default();
     

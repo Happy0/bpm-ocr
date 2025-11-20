@@ -101,9 +101,6 @@ fn extract_lcd_birdseye_view(image: &Mat, led_coordinates: RectangleCoordinates)
         Point2f::new(0., max_height as f32 -1.0)
     ]);
 
-    println!("src points: ${:?}", src_points);
-    println!("dest points: ${:?}", dest_points);
-
     let src_points_mat = Mat::from_slice(src_points.as_slice())?;
     let dest_points_mat = Mat::from_slice(dest_points.as_slice())?;
 
