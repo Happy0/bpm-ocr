@@ -4,7 +4,8 @@ use opencv::{Error, core::{Point, Rect2i}};
 pub enum ProblemIdentifyingReadings {
     InternalError(String),
     CouldNotIdentifyReadings,
-    CouldNotIdentityLCDCandidate
+    CouldNotIdentityLCDCandidate,
+    UnexpectedNumberOfRows
 }
 
 #[derive(Debug)]
@@ -29,8 +30,11 @@ pub(crate) struct RectangleCoordinates {
     pub bottom_right: Point
 }
 
-pub(crate) struct LcdNumberGroup {
-    digits: Vec<Rect2i>
+#[derive(Clone, Debug)]
+pub(crate) struct ReadingLocations {
+    pub systolic_region: Vec<Rect2i>,
+    pub diastolic_region: Vec<Rect2i>,
+    pub pulse_region: Vec<Rect2i>
 }
 
 pub struct BloodPressureReading {

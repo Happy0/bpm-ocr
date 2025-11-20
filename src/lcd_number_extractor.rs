@@ -1,6 +1,9 @@
 
+use std::{collections::HashMap, hash::Hash};
+
 use opencv::{Error, core::{CV_8U, Mat, Point, Rect2i, Scalar, Size, Vector}, imgproc::{self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect, cvt_color_def, dilate_def, find_contours_def, get_structuring_element_def, morphology_ex_def, rectangle_def, threshold}};
-use crate::models::ProcessingError;
+use crate::models::{ProcessingError, ReadingLocations};
+use itertools::Itertools;
 
 fn highlight_digits(image: &Mat) -> Result<Mat, ProcessingError> {
     let mut thresholed_image = Mat::default();
@@ -43,21 +46,67 @@ pub fn get_digit_borders(image:  &Mat) -> Result<Vec<Rect2i>, ProcessingError> {
     return Ok(result);
 }
 
+fn group_by_similar_y_coordinate(
+    digits: Vec<Rect2i>,
+    difference_threshold: i32,
+) -> Vec<Vec<Rect2i>> 
+{
+    let mut groups: Vec<Vec<Rect2i>> = Vec::new();
+
+    'outer: for digit in digits {
+
+        for group in groups.iter_mut() {
+            if let Some(leader) = group.first() {
+                if (leader.y - digit.y).abs() < difference_threshold {
+                    group.push(digit);
+                    continue 'outer;
+                }
+            }
+        }
+
+        // No matching group found — make a new one
+        groups.push(vec![digit]);
+    }
+
+    groups
+}
+
+pub fn get_reading_locations(digits: Vec<Rect2i>) -> Result<ReadingLocations, ProcessingError> {
+    let mut sorted_digits = digits.clone();
+    sorted_digits.sort_by(|vec1,vec2| vec1.y.cmp(&vec2.y));
+
+    let grouped_by_y_coordinate: Vec<Vec<Rect2i>> = group_by_similar_y_coordinate(sorted_digits, 5);
+
+    println!("{:?}", grouped_by_y_coordinate);
+
+    match &grouped_by_y_coordinate.as_slice() {
+        [sys, dia, pulse] => Ok(ReadingLocations{
+            systolic_region: sys.clone(),
+            diastolic_region: dia.clone(),
+            pulse_region: pulse.clone()
+        }),
+        
+        _ => {Err(ProcessingError::AppError(crate::models::ProblemIdentifyingReadings::UnexpectedNumberOfRows))}
+    }
+}
+
 //pub fn extract_readings(image: &Mat) -> Result<Mat, BloodPressureReading> {
 pub fn extract_readings(image: &Mat) -> Result<Mat, ProcessingError> {
     let highlighted_digits = highlight_digits(image)?;
 
     let digit_borders = get_digit_borders(&highlighted_digits)?;
 
-    println!("{:?}", digit_borders);
+    let reading_locations = get_reading_locations(digit_borders)?;
+
+    println!("{:?}", &reading_locations);
 
     let mut temp_image = Mat::default();
     
     cvt_color_def(&highlighted_digits, &mut temp_image, CV_8U)?;
 
-    for b in digit_borders {
-        rectangle_def(&mut temp_image, b, Scalar::new(0.0, 255.0, 0.0, 0.0))?
-    }
+    // for b in digit_borders {
+    //     rectangle_def(&mut temp_image, b, Scalar::new(0.0, 255.0, 0.0, 0.0))?
+    // }
 
     // for c in contours {
     //     draw_contours_def(&mut temp_image, &c, -1, Scalar::new(0.0, 255.0, 0.0, 0.0)).unwrap();
