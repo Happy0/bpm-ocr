@@ -1,4 +1,4 @@
-use opencv::Error;
+use opencv::{Error, core::Point};
 
 #[derive(Clone, Debug)]
 pub enum ProblemIdentifyingReadings {
@@ -19,6 +19,14 @@ impl From<Error> for ProcessingError {
             Self::ImageDetectionLibraryError(error)
         }
     }
+}
+
+#[derive(Clone, Debug)]
+pub struct RectangleCoordinates {
+    pub topLeft: Point,
+    pub topRight: Point,
+    pub bottomLeft: Point,
+    pub bottomRight: Point
 }
 
 pub struct BloodPressureReading {

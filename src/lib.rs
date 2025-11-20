@@ -1,7 +1,6 @@
 use std::cmp::max;
 
-use imageproc::drawing::{draw_polygon, draw_polygon_mut};
-use opencv::imgproc::{approx_poly_dp, arc_length, draw_contours, fill_poly_def, get_perspective_transform, get_perspective_transform_def, rectangle_def, warp_perspective, warp_perspective_def};
+use opencv::imgproc::{approx_poly_dp, arc_length, get_perspective_transform_def, rectangle_def, warp_perspective, warp_perspective_def};
 use opencv::{imgcodecs, imgproc};
 use opencv::imgcodecs::ImreadModes;
 use opencv::core::{DECOMP_LU, Mat, MatTrait, MatTraitConst, MatTraitConstManual, Point, Point2f, Rect, Size, UMat, Vector, VectorToVec};
@@ -12,15 +11,6 @@ use crate::lcd_number_extractor::extract_readings;
 use crate::models::{ProblemIdentifyingReadings, ProcessingError};
 mod models;
 mod lcd_number_extractor;
-
-
-#[derive(Clone, Debug)]
-struct RectangleCoordinates {
-    topLeft: Point,
-    topRight: Point,
-    bottomLeft: Point,
-    bottomRight: Point
-}
 
 #[derive(Clone, Debug)]
 struct LcdScreenCandidate {
@@ -49,6 +39,7 @@ fn get_lcd_candidate_points(contour: &Vector<Point>) -> Result<Option<LcdScreenC
     }
 }
 
+// Looks for rectangle shapes in the image which could be the LCD screen
 fn get_lcd_candidates(contours: &Vector<Vector<Point>>) -> Result<Vec<LcdScreenCandidate>, Error> {
 
     let candidate_results: Vec<Result<Option<LcdScreenCandidate>,Error>> = 
@@ -69,7 +60,7 @@ fn get_lcd_candidates(contours: &Vector<Vector<Point>>) -> Result<Vec<LcdScreenC
 }
 
 // Extracts only the LCD screen and transforms the image to a top down view of it
-fn extract_lcd_birdseye_view(image: &Mat, led_coordinates: RectangleCoordinates) -> Result<Mat,Error> {
+fn extract_lcd_birdseye_view(image: &Mat, led_coordinates: models::RectangleCoordinates) -> Result<Mat,Error> {
 
     let width_bottom = 
         ((led_coordinates.bottomRight.x - led_coordinates.bottomLeft.x).pow(2) +  (led_coordinates.bottomRight.y - led_coordinates.bottomLeft.y).pow(2)).isqrt();
@@ -113,7 +104,7 @@ fn extract_lcd_birdseye_view(image: &Mat, led_coordinates: RectangleCoordinates)
     Ok(dest_image)
 }
 
-fn locate_corners(points: (Point, Point, Point, Point)) -> RectangleCoordinates {
+fn locate_corners(points: (Point, Point, Point, Point)) -> models::RectangleCoordinates {
     let (p1,p2,p3,p4) = points;
     let mut point_array = [p1,p2,p3,p4];
 
@@ -126,13 +117,13 @@ fn locate_corners(points: (Point, Point, Point, Point)) -> RectangleCoordinates 
             let bottom_right = p4;
             let (bottom_left, top_right) = if (p2.x < p3.x) {(p2, p3)} else {(p3, p2)};
 
-            return RectangleCoordinates { topLeft: top_left, topRight: top_right, bottomLeft: bottom_left, bottomRight: bottom_right }
+            return models::RectangleCoordinates { topLeft: top_left, topRight: top_right, bottomLeft: bottom_left, bottomRight: bottom_right }
         }
     }
 }
 
-fn get_rectangle_coordinates(lcd_screen_candidate: &LcdScreenCandidate) -> Result<RectangleCoordinates, ProblemIdentifyingReadings> {
-    match lcd_screen_candidate.coordinates.as_slice() {
+fn get_rectangle_coordinates(coordinates: &Vector<Point>) -> Result<models::RectangleCoordinates, ProblemIdentifyingReadings> {
+    match coordinates.as_slice() {
         [p1,p2,p3,p4] => {
             let coordinates = locate_corners((*p1,*p2,*p3,*p4));
 
@@ -169,7 +160,7 @@ pub async fn get_reading_from_file(filename: &str) -> Result<(), ProcessingError
         ProcessingError::AppError(ProblemIdentifyingReadings::CouldNotIdentityLCDCandidate)
     )?;
 
-    let lcd_coordinates = get_rectangle_coordinates(best_candidate_led)
+    let lcd_coordinates = get_rectangle_coordinates(&best_candidate_led.coordinates)
         .map_err(ProcessingError::AppError)?;
 
     let birdseye_lcd_only = extract_lcd_birdseye_view(&resized_image, lcd_coordinates)?;
