@@ -63,7 +63,7 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
         println!("Total filled in area{:?}", total_filled_in_area);
         println!("Total area: {:?} ", rect.area());
 
-        if ((total_filled_in_area as f32 / rect.area() as f32) > 0.50) {
+        if ((total_filled_in_area as f32 / rect.area() as f32) > 0.65) {
             return Ok(1);
         } else {
             return Ok(0)
