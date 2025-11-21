@@ -73,7 +73,7 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
         ), // bottom row
     ];
 
-    let digits_lit_up_result: [Result<i32, Error>; 7] =
+    let digit_segments_lit_up_result: [Result<i32, Error>; 7] =
         segment_locations.map(|segment_locations| {
             let ((xA, yA), (xB, yB)) = segment_locations;
 
@@ -98,11 +98,12 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
             }
         });
 
-    println!("Digits lit up: {:?}", digits_lit_up_result);
+    println!("Digit segments lit up: {:?}", digit_segments_lit_up_result);
 
-    let digits_lit_up: Result<Vec<i32>, Error> = digits_lit_up_result.into_iter().collect();
+    let digit_segments_lit_up: Result<Vec<i32>, Error> =
+        digit_segments_lit_up_result.into_iter().collect();
 
-    let lit_up = digits_lit_up?;
+    let lit_up = digit_segments_lit_up?;
 
     let result = SEGMENTS_TO_NUMBER_MAP.iter().find(|segments| {
         return lit_up
