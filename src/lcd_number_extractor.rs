@@ -100,7 +100,7 @@ pub fn extract_readings(image: &Mat) -> Result<Mat, ProcessingError> {
     let digit_borders = get_digit_borders(&highlighted_digits)?;
     let reading_locations = get_reading_locations(digit_borders)?;
 
-   let result = digit::parse_digit(&highlighted_digits, *reading_locations.systolic_region.get(2).unwrap() )?;
+   let result = digit::parse_digit(&highlighted_digits, *reading_locations.systolic_region.get(1).unwrap() )?;
 
     println!("{:?}", &result);
 

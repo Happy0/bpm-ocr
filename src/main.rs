@@ -5,7 +5,7 @@ use tokio;
 async fn main() {
     println!("Testaroonie");
 
-    let result = get_reading_from_file("/home/happy0/example7.jpg").await;
+    let result = get_reading_from_file("/home/happy0/example3.jpg").await;
 
     println!("{:?}", result);
 

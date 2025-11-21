@@ -10,7 +10,8 @@ static SEGMENTS_TO_NUMBER_MAP: [([i32; 7], i32); 10] = [
     ([0, 1, 1, 1, 0, 1, 0],4),
     ([1, 1, 0, 1, 0, 1, 1], 5),
     ([1, 1, 0, 1, 1, 1, 1], 6),
-    ([1, 0, 1, 0, 0, 1, 0], 7),
+    //([1, 0, 1, 0, 0, 1, 0], 7),
+    ([1, 1, 1, 0, 0, 1, 0], 7),
     ([1, 1, 1, 1, 1, 1, 1], 8),
     ([1, 1, 1, 1, 0, 1, 1], 9)
 ];
@@ -22,10 +23,10 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
     let total_filled_in_area = count_non_zero(&focused_digit)?;
     let total_area = full_digit_location.area();
 
-    println!("");
+    println!("One check, total area ${:?}, total filled in ${:?}", total_area, total_filled_in_area );
 
     // If we're drawn a box around an area that's mostly filled in, then it's probably a 1
-    if (total_filled_in_area as f32) / (total_area as f32) > 0.80 {
+    if (total_filled_in_area as f32) / (total_area as f32) > 0.85 {
         return Ok(1);
     }
 
@@ -59,10 +60,10 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
 
         let total_filled_in_area = count_non_zero(&focused_segment)?;
 
-        // println!("{:?}", total_filled_in_area);
-        // println!("Total area: {:?} ", rect.area());
+        println!("Total filled in area{:?}", total_filled_in_area);
+        println!("Total area: {:?} ", rect.area());
 
-        if ((total_filled_in_area as f32 / rect.area() as f32) > 0.5) {
+        if ((total_filled_in_area as f32 / rect.area() as f32) > 0.50) {
             return Ok(1);
         } else {
             return Ok(0)
