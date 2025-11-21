@@ -71,12 +71,17 @@ fn group_by_similar_y_coordinate(
 }
 
 pub fn get_reading_locations(digits: Vec<Rect2i>) -> Result<ReadingLocations, ProcessingError> {
+
+    // Sort digits by their row
     let mut sorted_digits = digits.clone();
     sorted_digits.sort_by(|vec1,vec2| vec1.y.cmp(&vec2.y));
 
-    let grouped_by_y_coordinate: Vec<Vec<Rect2i>> = group_by_similar_y_coordinate(sorted_digits, 5);
+    let mut grouped_by_y_coordinate: Vec<Vec<Rect2i>> = group_by_similar_y_coordinate(sorted_digits, 5);
 
-    println!("{:?}", grouped_by_y_coordinate);
+    // Sort numbers by their columns
+    for group in grouped_by_y_coordinate.iter_mut() {
+        group.sort_by(|item1, item2| item1.x.cmp(&item2.x));
+    }
 
     match &grouped_by_y_coordinate.as_slice() {
         [sys, dia, pulse] => Ok(ReadingLocations{
@@ -101,7 +106,7 @@ pub fn extract_readings(image: &Mat) -> Result<Mat, ProcessingError> {
 
     let mut temp_image = Mat::default();
     
-    cvt_color_def(&highlighted_digits, &mut temp_image, CV_8U)?;
+    //cvt_color_def(&highlighted_digits, &mut temp_image, CV_8U)?;
 
     // for b in digit_borders {
     //     rectangle_def(&mut temp_image, b, Scalar::new(0.0, 255.0, 0.0, 0.0))?
@@ -111,7 +116,5 @@ pub fn extract_readings(image: &Mat) -> Result<Mat, ProcessingError> {
     //     draw_contours_def(&mut temp_image, &c, -1, Scalar::new(0.0, 255.0, 0.0, 0.0)).unwrap();
     // }
 
-    return Ok(temp_image);
-
-
+    return Ok(highlighted_digits);
 }
