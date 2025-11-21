@@ -11,6 +11,7 @@ use crate::lcd_number_extractor::extract_readings;
 use crate::models::{ProblemIdentifyingReadings, ProcessingError};
 mod models;
 mod lcd_number_extractor;
+mod digit;
 
 #[derive(Clone, Debug)]
 struct LcdScreenCandidate {

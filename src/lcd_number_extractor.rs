@@ -1,8 +1,7 @@
 
-use std::{collections::HashMap, hash::Hash};
-
 use opencv::{Error, core::{CV_8U, Mat, Point, Rect2i, Scalar, Size, Vector}, imgproc::{self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect, cvt_color_def, dilate_def, find_contours_def, get_structuring_element_def, morphology_ex_def, rectangle_def, threshold}};
-use crate::models::{ProcessingError, ReadingLocations};
+use crate::{digit, models::{ProcessingError, ReadingLocations}};
+use crate::digit::parse_digit;
 
 fn highlight_digits(image: &Mat) -> Result<Mat, ProcessingError> {
     let mut thresholed_image = Mat::default();
@@ -99,13 +98,12 @@ pub fn extract_readings(image: &Mat) -> Result<Mat, ProcessingError> {
     let highlighted_digits = highlight_digits(image)?;
 
     let digit_borders = get_digit_borders(&highlighted_digits)?;
-
     let reading_locations = get_reading_locations(digit_borders)?;
 
-    println!("{:?}", &reading_locations);
+    let result = digit::parse_digit(&highlighted_digits, *reading_locations.systolic_region.get(0).unwrap() )?;
 
-    let mut temp_image = Mat::default();
-    
+    println!("{:?}", &result);
+
     //cvt_color_def(&highlighted_digits, &mut temp_image, CV_8U)?;
 
     // for b in digit_borders {

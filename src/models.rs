@@ -5,7 +5,8 @@ pub enum ProblemIdentifyingReadings {
     InternalError(String),
     CouldNotIdentifyReadings,
     CouldNotIdentityLCDCandidate,
-    UnexpectedNumberOfRows
+    UnexpectedNumberOfRows,
+    CouldNotProcessSegments
 }
 
 #[derive(Debug)]
