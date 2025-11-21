@@ -1,14 +1,30 @@
-
-use opencv::{Error, core::{CV_8U, Mat, Point, Rect2i, Scalar, Size, Vector}, imgproc::{self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect, cvt_color_def, dilate_def, find_contours_def, get_structuring_element_def, morphology_ex_def, rectangle_def, threshold}};
-use crate::{digit, models::{BloodPressureReading, ProblemIdentifyingReadings, ProcessingError, ReadingLocations}};
 use crate::digit::parse_digit;
+use crate::{
+    digit,
+    models::{BloodPressureReading, ProblemIdentifyingReadings, ProcessingError, ReadingLocations},
+};
+use opencv::{
+    Error,
+    core::{CV_8U, Mat, Point, Rect2i, Scalar, Size, Vector},
+    imgproc::{
+        self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect,
+        cvt_color_def, dilate_def, find_contours_def, get_structuring_element_def,
+        morphology_ex_def, rectangle_def, threshold,
+    },
+};
 
 fn highlight_digits(image: &Mat) -> Result<Mat, ProcessingError> {
     let mut thresholed_image = Mat::default();
 
-    threshold(image, &mut thresholed_image, 0., 255., THRESH_BINARY_INV | THRESH_OTSU )?;
+    threshold(
+        image,
+        &mut thresholed_image,
+        0.,
+        255.,
+        THRESH_BINARY_INV | THRESH_OTSU,
+    )?;
 
-    let kernel = get_structuring_element_def(MORPH_ELLIPSE, Size::new(1,5))?;
+    let kernel = get_structuring_element_def(MORPH_ELLIPSE, Size::new(1, 5))?;
 
     let mut morphed_image = Mat::default();
     morphology_ex_def(&thresholed_image, &mut morphed_image, MORPH_OPEN, &kernel)?;
@@ -16,28 +32,36 @@ fn highlight_digits(image: &Mat) -> Result<Mat, ProcessingError> {
     let mut dilated_image = Mat::default();
 
     // Fill in the gaps in the middle of the digits on the LCD screen to make it easier to identify the full digit
-    let dilation_kernel = get_structuring_element_def(imgproc::MORPH_RECT, Size::new(6,4))?;
+    let dilation_kernel = get_structuring_element_def(imgproc::MORPH_RECT, Size::new(6, 4))?;
     dilate_def(&morphed_image, &mut dilated_image, &dilation_kernel)?;
 
     return Ok(dilated_image);
 }
 
-pub fn get_digit_borders(image:  &Mat) -> Result<Vec<Rect2i>, ProcessingError> {
-    let mut contours_output : Vector<Vector<Point>> = Vector::new();
-    find_contours_def(image, &mut contours_output, imgproc::RETR_EXTERNAL, imgproc::CHAIN_APPROX_SIMPLE)?;
+pub fn get_digit_borders(image: &Mat) -> Result<Vec<Rect2i>, ProcessingError> {
+    let mut contours_output: Vector<Vector<Point>> = Vector::new();
+    find_contours_def(
+        image,
+        &mut contours_output,
+        imgproc::RETR_EXTERNAL,
+        imgproc::CHAIN_APPROX_SIMPLE,
+    )?;
 
-    let predicted_digits: Vec<Result<Rect2i, Error>> = contours_output.iter().map(|contour| {
-        return bounding_rect(&contour);
-    }).collect();
+    let predicted_digits: Vec<Result<Rect2i, Error>> = contours_output
+        .iter()
+        .map(|contour| {
+            return bounding_rect(&contour);
+        })
+        .collect();
 
-    let possible_digits :Result<Vec<Rect2i>,Error> = predicted_digits.into_iter().collect();
+    let possible_digits: Result<Vec<Rect2i>, Error> = predicted_digits.into_iter().collect();
 
     let x = possible_digits?;
 
     // Filter out anything that is small enough to probably not be a digit
     let result: Vec<Rect2i> = x
         .iter()
-        .filter(|possible_digit| possible_digit.height > 30 )
+        .filter(|possible_digit| possible_digit.height > 30)
         .cloned()
         .collect();
 
@@ -47,12 +71,10 @@ pub fn get_digit_borders(image:  &Mat) -> Result<Vec<Rect2i>, ProcessingError> {
 fn group_by_similar_y_coordinate(
     digits: Vec<Rect2i>,
     difference_threshold: i32,
-) -> Vec<Vec<Rect2i>> 
-{
+) -> Vec<Vec<Rect2i>> {
     let mut groups: Vec<Vec<Rect2i>> = Vec::new();
 
     'outer: for digit in digits {
-
         for group in groups.iter_mut() {
             if let Some(leader) = group.first() {
                 if (leader.y - digit.y).abs() < difference_threshold {
@@ -70,12 +92,12 @@ fn group_by_similar_y_coordinate(
 }
 
 pub fn get_reading_locations(digits: Vec<Rect2i>) -> Result<ReadingLocations, ProcessingError> {
-
     // Sort digits by their row
     let mut sorted_digits = digits.clone();
-    sorted_digits.sort_by(|vec1,vec2| vec1.y.cmp(&vec2.y));
+    sorted_digits.sort_by(|vec1, vec2| vec1.y.cmp(&vec2.y));
 
-    let mut grouped_by_y_coordinate: Vec<Vec<Rect2i>> = group_by_similar_y_coordinate(sorted_digits, 5);
+    let mut grouped_by_y_coordinate: Vec<Vec<Rect2i>> =
+        group_by_similar_y_coordinate(sorted_digits, 5);
 
     // Sort numbers by their columns
     for group in grouped_by_y_coordinate.iter_mut() {
@@ -83,34 +105,34 @@ pub fn get_reading_locations(digits: Vec<Rect2i>) -> Result<ReadingLocations, Pr
     }
 
     match &grouped_by_y_coordinate.as_slice() {
-        [sys, dia, pulse] => Ok(ReadingLocations{
+        [sys, dia, pulse] => Ok(ReadingLocations {
             systolic_region: sys.clone(),
             diastolic_region: dia.clone(),
-            pulse_region: pulse.clone()
+            pulse_region: pulse.clone(),
         }),
-        
-        _ => {Err(ProcessingError::AppError(crate::models::ProblemIdentifyingReadings::UnexpectedNumberOfRows))}
+
+        _ => Err(ProcessingError::AppError(
+            crate::models::ProblemIdentifyingReadings::UnexpectedNumberOfRows,
+        )),
     }
 }
 
 fn digits_to_number(image: &Mat, digits: Vec<Rect2i>) -> Result<i32, ProcessingError> {
-
     let mut result: i32 = 0;
     for (index, digit) in digits.iter().enumerate() {
-
         let digit_result: i32 = digit::parse_digit(&image, *digit)?;
-        let multiplier:i32 = ((digits.len() - (index + 1)))
-            .try_into()
-            .map_err(|x| ProcessingError::AppError(ProblemIdentifyingReadings::InternalError("Unexpected number conversion issue".to_string())))?;
+        let multiplier: i32 = (digits.len() - (index + 1)).try_into().map_err(|x| {
+            ProcessingError::AppError(ProblemIdentifyingReadings::InternalError(
+                "Unexpected number conversion issue".to_string(),
+            ))
+        })?;
 
-        let ten:i32 = 10;
+        let ten: i32 = 10;
         result = result + (digit_result * (ten.pow(multiplier.try_into().unwrap())));
-
     }
 
     Ok(result)
 }
-
 
 pub fn extract_readings(image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
     let highlighted_digits = highlight_digits(image)?;
@@ -118,7 +140,10 @@ pub fn extract_readings(image: &Mat) -> Result<BloodPressureReading, ProcessingE
     let digit_borders = get_digit_borders(&highlighted_digits)?;
     let reading_locations = get_reading_locations(digit_borders)?;
 
-   let result = digit::parse_digit(&highlighted_digits, *reading_locations.diastolic_region.get(1).unwrap() )?;
+    let result = digit::parse_digit(
+        &highlighted_digits,
+        *reading_locations.diastolic_region.get(1).unwrap(),
+    )?;
 
     println!("{:?}", &result);
 
@@ -134,7 +159,8 @@ pub fn extract_readings(image: &Mat) -> Result<BloodPressureReading, ProcessingE
     // }
 
     let systolic_result = digits_to_number(&highlighted_digits, reading_locations.systolic_region)?;
-    let diastolic_result = digits_to_number(&highlighted_digits, reading_locations.diastolic_region)?;
+    let diastolic_result =
+        digits_to_number(&highlighted_digits, reading_locations.diastolic_region)?;
     let pulse_result = digits_to_number(&highlighted_digits, reading_locations.pulse_region)?;
 
     let blood_pressure_reading = BloodPressureReading {
