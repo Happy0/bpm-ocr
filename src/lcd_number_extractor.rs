@@ -1,6 +1,6 @@
 
 use opencv::{Error, core::{CV_8U, Mat, Point, Rect2i, Scalar, Size, Vector}, imgproc::{self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect, cvt_color_def, dilate_def, find_contours_def, get_structuring_element_def, morphology_ex_def, rectangle_def, threshold}};
-use crate::{digit, models::{ProcessingError, ReadingLocations}};
+use crate::{digit, models::{BloodPressureReading, ProcessingError, ReadingLocations}};
 use crate::digit::parse_digit;
 
 fn highlight_digits(image: &Mat) -> Result<Mat, ProcessingError> {
@@ -93,8 +93,24 @@ pub fn get_reading_locations(digits: Vec<Rect2i>) -> Result<ReadingLocations, Pr
     }
 }
 
-//pub fn extract_readings(image: &Mat) -> Result<Mat, BloodPressureReading> {
-pub fn extract_readings(image: &Mat) -> Result<Mat, ProcessingError> {
+fn digits_to_number(image: &Mat, digits: Vec<Rect2i>) -> Result<i32, ProcessingError> {
+
+    let mut result: i32 = 0;
+    for (index, digit) in digits.iter().enumerate() {
+
+        let digit_result: i32 = digit::parse_digit(&image, *digit)?;
+        let multiplier:i32 = ((digits.len() - (index + 1))).try_into().unwrap();
+
+        let ten:i32 = 10;
+        result = result + (digit_result * (ten.pow(multiplier.try_into().unwrap())));
+
+    }
+
+    Ok(result)
+}
+
+
+pub fn extract_readings(image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
     let highlighted_digits = highlight_digits(image)?;
 
     let digit_borders = get_digit_borders(&highlighted_digits)?;
@@ -115,5 +131,15 @@ pub fn extract_readings(image: &Mat) -> Result<Mat, ProcessingError> {
     //     draw_contours_def(&mut temp_image, &c, -1, Scalar::new(0.0, 255.0, 0.0, 0.0)).unwrap();
     // }
 
-    return Ok(highlighted_digits);
+    let systolic_result = digits_to_number(&highlighted_digits, reading_locations.systolic_region)?;
+    let diastolic_result = digits_to_number(&highlighted_digits, reading_locations.diastolic_region)?;
+    let pulse_result = digits_to_number(&highlighted_digits, reading_locations.pulse_region)?;
+
+    let blood_pressure_reading = BloodPressureReading {
+        systolic: systolic_result,
+        diastolic: diastolic_result,
+        pulse: pulse_result,
+    };
+
+    return Ok(blood_pressure_reading);
 }
