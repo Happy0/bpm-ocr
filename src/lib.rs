@@ -9,8 +9,8 @@ use opencv::imgproc::{
 };
 use opencv::{imgcodecs, imgproc};
 
-use crate::lcd_number_extractor::extract_readings;
-use crate::models::{ProblemIdentifyingReadings, ProcessingError};
+use crate::lcd_number_extractor::extract_reading;
+use crate::models::{BloodPressureReading, ProblemIdentifyingReadings, ProcessingError};
 mod digit;
 mod lcd_number_extractor;
 mod models;
@@ -170,7 +170,7 @@ fn get_rectangle_coordinates(
     }
 }
 
-pub async fn get_reading_from_file(filename: &str) -> Result<(), ProcessingError> {
+pub async fn get_reading_from_file(filename: &str) -> Result<BloodPressureReading, ProcessingError> {
     let gray_scale_mode: i32 = ImreadModes::IMREAD_GRAYSCALE.into();
     let image = imgcodecs::imread(filename, gray_scale_mode)?;
 
@@ -212,9 +212,7 @@ pub async fn get_reading_from_file(filename: &str) -> Result<(), ProcessingError
         .map_err(ProcessingError::AppError)?;
 
     let birdseye_lcd_only = extract_lcd_birdseye_view(&resized_image, lcd_coordinates)?;
-    let digits = extract_readings(&birdseye_lcd_only)?;
-
-    println!("{:?}", digits);
+    let reading = extract_reading(&birdseye_lcd_only)?;
 
     //fill_poly_def(&mut resized_image, &best_candidate_led.coordinates, (255,0,0).into())?;
     // highgui::imshow("testaroonie", &digits);
@@ -223,5 +221,5 @@ pub async fn get_reading_from_file(filename: &str) -> Result<(), ProcessingError
 
     // highgui::destroy_all_windows();
 
-    Ok(())
+    Ok(reading)
 }

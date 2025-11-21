@@ -134,7 +134,7 @@ fn digits_to_number(image: &Mat, digits: Vec<Rect2i>) -> Result<i32, ProcessingE
     Ok(result)
 }
 
-pub fn extract_readings(image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
+pub fn extract_reading(image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
     let highlighted_digits = highlight_digits(image)?;
 
     let digit_borders = get_digit_borders(&highlighted_digits)?;
