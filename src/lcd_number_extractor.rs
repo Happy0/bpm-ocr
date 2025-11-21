@@ -100,11 +100,12 @@ pub fn extract_readings(image: &Mat) -> Result<Mat, ProcessingError> {
     let digit_borders = get_digit_borders(&highlighted_digits)?;
     let reading_locations = get_reading_locations(digit_borders)?;
 
-    let result = digit::parse_digit(&highlighted_digits, *reading_locations.systolic_region.get(0).unwrap() )?;
+   let result = digit::parse_digit(&highlighted_digits, *reading_locations.systolic_region.get(2).unwrap() )?;
 
     println!("{:?}", &result);
 
-    //cvt_color_def(&highlighted_digits, &mut temp_image, CV_8U)?;
+    // let mut temp_image = Mat::default();
+    // cvt_color_def(&highlighted_digits, &mut temp_image, CV_8U)?;
 
     // for b in digit_borders {
     //     rectangle_def(&mut temp_image, b, Scalar::new(0.0, 255.0, 0.0, 0.0))?

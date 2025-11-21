@@ -17,11 +17,24 @@ static SEGMENTS_TO_NUMBER_MAP: [([i32; 7], i32); 10] = [
 
 pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, ProcessingError> {
 
-    //let focused_digit = image.roi(full_digit_location)?;
+    let focused_digit = image.roi(full_digit_location)?;
+
+    let total_filled_in_area = count_non_zero(&focused_digit)?;
+    let total_area = full_digit_location.area();
+
+    println!("");
+
+    // If we're drawn a box around an area that's mostly filled in, then it's probably a 1
+    if (total_filled_in_area as f32) / (total_area as f32) > 0.80 {
+        return Ok(1);
+    }
 
     let digit_width = ((full_digit_location.width as f32) * 0.25) as i32;
     let digit_height = ((full_digit_location.height as f32) * 0.15) as i32;
     let digit_height_centre = ((full_digit_location.height as f32) * 0.05) as i32;
+
+    // Notearoonies to self:
+    // I think I need to start from the top right of the bounding boxes
 
     let segment_locations = [
         ( (0,0), (full_digit_location.width, digit_height) ), // top row,
@@ -39,12 +52,15 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
         let rect: opencv::core::Rect_<i32> = Rect2i::from_points(
             Point::new(full_digit_location.x + xA, full_digit_location.y + yA),
             Point::new(full_digit_location.x + xB, full_digit_location.y + yB));
+
+        println!("{:?}", rect);
+        
         let focused_segment = image.roi(rect)?;
 
         let total_filled_in_area = count_non_zero(&focused_segment)?;
 
-        println!("{:?}", total_filled_in_area);
-        println!("Total area: {:?} ", rect.area());
+        // println!("{:?}", total_filled_in_area);
+        // println!("Total area: {:?} ", rect.area());
 
         if ((total_filled_in_area as f32 / rect.area() as f32) > 0.5) {
             return Ok(1);
