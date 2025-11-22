@@ -13,6 +13,7 @@ use crate::models::{BloodPressureReading, ProblemIdentifyingReadings, Processing
 mod digit;
 mod lcd_number_extractor;
 mod models;
+mod debug;
 
 #[derive(Clone, Debug)]
 struct LcdScreenCandidate {

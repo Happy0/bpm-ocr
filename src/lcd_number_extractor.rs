@@ -1,13 +1,11 @@
 use crate::{
-    digit,
-    models::{BloodPressureReading, ProblemIdentifyingReadings, ProcessingError, ReadingLocations},
+    debug, digit, models::{BloodPressureReading, ProblemIdentifyingReadings, ProcessingError, ReadingLocations}
 };
 use opencv::{
     Error,
-    core::{Mat, Point, Rect2i, Size, Vector},
+    core::{CV_8U, Mat, Point, Rect2i, Scalar, Size, Vector},
     imgproc::{
-        self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect, dilate_def,
-        find_contours_def, get_structuring_element_def, morphology_ex_def, threshold,
+        self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect, cvt_color_def, dilate_def, find_contours_def, get_structuring_element_def, morphology_ex_def, rectangle_def, threshold
     },
 };
 
@@ -136,6 +134,9 @@ pub fn extract_reading(image: &Mat) -> Result<BloodPressureReading, ProcessingEr
     let highlighted_digits = highlight_digits(image)?;
 
     let digit_borders = get_digit_borders(&highlighted_digits)?;
+
+    debug::debug_digit_locations(&highlighted_digits, &digit_borders)?;
+
     let reading_locations = get_reading_locations(digit_borders)?;
 
     let systolic_result = digits_to_number(&highlighted_digits, reading_locations.systolic_region)?;
