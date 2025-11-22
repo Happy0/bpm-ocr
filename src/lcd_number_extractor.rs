@@ -138,11 +138,6 @@ pub fn extract_reading(image: &Mat) -> Result<BloodPressureReading, ProcessingEr
     let digit_borders = get_digit_borders(&highlighted_digits)?;
     let reading_locations = get_reading_locations(digit_borders)?;
 
-    let result = digit::parse_digit(
-        &highlighted_digits,
-        *reading_locations.diastolic_region.get(1).unwrap(),
-    )?;
-
     let systolic_result = digits_to_number(&highlighted_digits, reading_locations.systolic_region)?;
     let diastolic_result =
         digits_to_number(&highlighted_digits, reading_locations.diastolic_region)?;
