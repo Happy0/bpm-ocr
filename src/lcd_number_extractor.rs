@@ -57,7 +57,7 @@ pub fn get_digit_borders(image: &Mat) -> Result<Vec<Rect2i>, ProcessingError> {
     // Filter out anything that is small enough to probably not be a digit
     let result: Vec<Rect2i> = x
         .iter()
-        .filter(|possible_digit| possible_digit.height > 30)
+        .filter(|possible_digit| possible_digit.y != 0 && possible_digit.height > 30)
         .cloned()
         .collect();
 
