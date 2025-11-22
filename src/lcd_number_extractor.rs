@@ -119,14 +119,14 @@ fn digits_to_number(image: &Mat, digits: Vec<Rect2i>) -> Result<i32, ProcessingE
     let mut result: i32 = 0;
     for (index, digit) in digits.iter().enumerate() {
         let digit_result: i32 = digit::parse_digit(&image, *digit)?;
-        let multiplier: i32 = (digits.len() - (index + 1)).try_into().map_err(|x| {
+        let multiplier: u32 = (digits.len() - (index + 1)).try_into().map_err(|x| {
             ProcessingError::AppError(ProblemIdentifyingReadings::InternalError(
                 "Unexpected number conversion issue".to_string(),
             ))
         })?;
 
         let ten: i32 = 10;
-        result = result + (digit_result * (ten.pow(multiplier.try_into().unwrap())));
+        result = result + (digit_result * (ten.pow(multiplier)));
     }
 
     Ok(result)
