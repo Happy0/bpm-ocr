@@ -23,6 +23,21 @@ fn get_debug_filepath(filename: &str) -> Option<String> {
     result.map(|x| x.to_string())
 }
 
+fn write_file(image: &Mat, file_name: &str) -> Result<(), ProcessingError> {
+        
+    let file_path = get_debug_filepath(&file_name);
+
+    match file_path {
+        Some(path) => {
+            imwrite_def(&path, &image)?;
+            Ok(())
+        }
+        None => {
+            Err(ProcessingError::AppError(ProblemIdentifyingReadings::InternalError("Could not create a temporary image for debugging for digit locations".to_string())))
+        }
+    }
+}
+
 pub fn debug_digit_locations(image: &Mat, digit_locations: &Vec<Rect2i>) -> Result<(), ProcessingError> {
     let mut temp_image = Mat::default();
     cvt_color_def(&image, &mut temp_image, CV_8U)?;
@@ -31,15 +46,5 @@ pub fn debug_digit_locations(image: &Mat, digit_locations: &Vec<Rect2i>) -> Resu
         rectangle_def(&mut temp_image, *b, Scalar::new(0.0, 255.0, 0.0, 0.0))?;
     }
     
-    let file_path = get_debug_filepath("digit_locations.jpg");
-
-    match file_path {
-        Some(path) => {
-            imwrite_def(&path, &temp_image)?;
-            Ok(())
-        }
-        None => {
-            Err(ProcessingError::AppError(ProblemIdentifyingReadings::InternalError("Could not create a temporary image for debugging for digit locations".to_string())))
-        }
-    }
+    write_file(&temp_image, "digit_locations.jpeg")
 }
