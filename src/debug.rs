@@ -38,15 +38,34 @@ fn write_file(image: &Mat, file_name: &str) -> Result<(), ProcessingError> {
     }
 }
 
+pub fn debug_enabled() -> bool {
+    env
+        ::var("DEBUG_BPM_OCR")
+        .map(|value| value.to_ascii_lowercase() == "true")
+        .unwrap_or(false)
+}
+
 pub fn debug_digits_before_dilation(image: &Mat)-> Result<(), ProcessingError> {
+    if !debug_enabled() {
+        return Ok(());
+    }
+
     write_file(image, "digits_before_dilation.jpeg")
 }
 
 pub fn debug_digits_after_dilation(image: &Mat) -> Result<(), ProcessingError> {
+    if !debug_enabled() {
+        return Ok(());
+    }
+
     write_file(&image, "digits_after_dilation.jpeg")
 }
 
 pub fn debug_digit_locations(image: &Mat, digit_locations: &Vec<Rect2i>) -> Result<(), ProcessingError> {
+    if !debug_enabled() {
+        return Ok(());
+    }
+
     let mut temp_image = Mat::default();
     cvt_color_def(&image, &mut temp_image, CV_8U)?;
 
