@@ -1,5 +1,5 @@
 use crate::{
-    debug, digit, models::{BloodPressureReading, ProblemIdentifyingReadings, ProcessingError, ReadingLocations}
+    debug::{self, debug_digits_after_dilation, debug_digits_before_dilation}, digit, models::{BloodPressureReading, ProblemIdentifyingReadings, ProcessingError, ReadingLocations}
 };
 use opencv::{
     Error,
@@ -25,11 +25,15 @@ fn highlight_digits(image: &Mat) -> Result<Mat, ProcessingError> {
     let mut morphed_image = Mat::default();
     morphology_ex_def(&thresholed_image, &mut morphed_image, MORPH_OPEN, &kernel)?;
 
+    debug_digits_before_dilation(&morphed_image)?;
+
     let mut dilated_image = Mat::default();
 
     // Fill in the gaps in the middle of the digits on the LCD screen to make it easier to identify the full digit
     let dilation_kernel = get_structuring_element_def(imgproc::MORPH_RECT, Size::new(6, 4))?;
     dilate_def(&morphed_image, &mut dilated_image, &dilation_kernel)?;
+
+    debug_digits_after_dilation(&dilated_image)?;
 
     return Ok(dilated_image);
 }

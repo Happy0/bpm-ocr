@@ -38,6 +38,14 @@ fn write_file(image: &Mat, file_name: &str) -> Result<(), ProcessingError> {
     }
 }
 
+pub fn debug_digits_before_dilation(image: &Mat)-> Result<(), ProcessingError> {
+    write_file(image, "digits_before_dilation.jpeg")
+}
+
+pub fn debug_digits_after_dilation(image: &Mat) -> Result<(), ProcessingError> {
+    write_file(&image, "digits_after_dilation.jpeg")
+}
+
 pub fn debug_digit_locations(image: &Mat, digit_locations: &Vec<Rect2i>) -> Result<(), ProcessingError> {
     let mut temp_image = Mat::default();
     cvt_color_def(&image, &mut temp_image, CV_8U)?;
