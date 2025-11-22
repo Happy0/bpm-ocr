@@ -45,12 +45,12 @@ pub fn debug_enabled() -> bool {
         .unwrap_or(false)
 }
 
-pub fn debug_digits_before_dilation(image: &Mat)-> Result<(), ProcessingError> {
+pub fn debug_digits_before_morph(image: &Mat) -> Result<(), ProcessingError> {
     if !debug_enabled() {
         return Ok(());
     }
 
-    write_file(image, "digits_before_dilation.jpeg")
+    write_file(image, "digits_before_morph.jpeg")
 }
 
 pub fn debug_digits_after_dilation(image: &Mat) -> Result<(), ProcessingError> {

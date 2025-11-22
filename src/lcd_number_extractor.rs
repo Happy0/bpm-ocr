@@ -1,5 +1,5 @@
 use crate::{
-    debug::{self, debug_digits_after_dilation, debug_digits_before_dilation}, digit, models::{BloodPressureReading, ProblemIdentifyingReadings, ProcessingError, ReadingLocations}
+    debug::{self, debug_digits_after_dilation, debug_digits_before_morph}, digit, models::{BloodPressureReading, ProblemIdentifyingReadings, ProcessingError, ReadingLocations}
 };
 use opencv::{
     Error,
@@ -20,18 +20,13 @@ fn highlight_digits(image: &Mat) -> Result<Mat, ProcessingError> {
         THRESH_BINARY_INV | THRESH_OTSU,
     )?;
 
-    let kernel = get_structuring_element_def(MORPH_ELLIPSE, Size::new(1, 5))?;
-
-    let mut morphed_image = Mat::default();
-    morphology_ex_def(&thresholed_image, &mut morphed_image, MORPH_OPEN, &kernel)?;
-
-    debug_digits_before_dilation(&morphed_image)?;
-
+    debug_digits_before_morph(&thresholed_image)?;
+    
     let mut dilated_image = Mat::default();
 
     // Fill in the gaps in the middle of the digits on the LCD screen to make it easier to identify the full digit
-    let dilation_kernel = get_structuring_element_def(imgproc::MORPH_RECT, Size::new(6, 4))?;
-    dilate_def(&morphed_image, &mut dilated_image, &dilation_kernel)?;
+    let dilation_kernel = get_structuring_element_def(imgproc::MORPH_RECT, Size::new(3, 3))?;
+    dilate_def(&thresholed_image, &mut dilated_image, &dilation_kernel)?;
 
     debug_digits_after_dilation(&dilated_image)?;
 

@@ -78,7 +78,7 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
 
             let total_filled_in_area = count_non_zero(&focused_segment)?;
 
-            if ((total_filled_in_area as f32 / rect.area() as f32) > 0.65) {
+            if (total_filled_in_area as f32 / rect.area() as f32) > 0.50 {
                 return Ok(1);
             } else {
                 return Ok(0);
