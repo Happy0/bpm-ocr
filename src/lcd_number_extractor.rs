@@ -1,15 +1,13 @@
-use crate::digit::parse_digit;
 use crate::{
     digit,
     models::{BloodPressureReading, ProblemIdentifyingReadings, ProcessingError, ReadingLocations},
 };
 use opencv::{
     Error,
-    core::{CV_8U, Mat, Point, Rect2i, Scalar, Size, Vector},
+    core::{Mat, Point, Rect2i, Size, Vector},
     imgproc::{
-        self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect,
-        cvt_color_def, dilate_def, find_contours_def, get_structuring_element_def,
-        morphology_ex_def, rectangle_def, threshold,
+        self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect, dilate_def,
+        find_contours_def, get_structuring_element_def, morphology_ex_def, threshold,
     },
 };
 
@@ -144,19 +142,6 @@ pub fn extract_reading(image: &Mat) -> Result<BloodPressureReading, ProcessingEr
         &highlighted_digits,
         *reading_locations.diastolic_region.get(1).unwrap(),
     )?;
-
-    println!("{:?}", &result);
-
-    // let mut temp_image = Mat::default();
-    // cvt_color_def(&highlighted_digits, &mut temp_image, CV_8U)?;
-
-    // for b in digit_borders {
-    //     rectangle_def(&mut temp_image, b, Scalar::new(0.0, 255.0, 0.0, 0.0))?
-    // }
-
-    // for c in contours {
-    //     draw_contours_def(&mut temp_image, &c, -1, Scalar::new(0.0, 255.0, 0.0, 0.0)).unwrap();
-    // }
 
     let systolic_result = digits_to_number(&highlighted_digits, reading_locations.systolic_region)?;
     let diastolic_result =

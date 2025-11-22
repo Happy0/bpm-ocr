@@ -1,8 +1,7 @@
 use std::cmp::max;
 
 use opencv::Error;
-use opencv::core::{Mat, MatTraitConstManual, Point, Point2f, Size, UMat, Vector, VectorToVec};
-use opencv::highgui;
+use opencv::core::{Mat, Point, Point2f, Size, UMat, Vector, VectorToVec};
 use opencv::imgcodecs::ImreadModes;
 use opencv::imgproc::{
     approx_poly_dp, arc_length, get_perspective_transform_def, warp_perspective_def,
@@ -170,7 +169,9 @@ fn get_rectangle_coordinates(
     }
 }
 
-pub async fn get_reading_from_file(filename: &str) -> Result<BloodPressureReading, ProcessingError> {
+pub async fn get_reading_from_file(
+    filename: &str,
+) -> Result<BloodPressureReading, ProcessingError> {
     let gray_scale_mode: i32 = ImreadModes::IMREAD_GRAYSCALE.into();
     let image = imgcodecs::imread(filename, gray_scale_mode)?;
 
@@ -213,13 +214,6 @@ pub async fn get_reading_from_file(filename: &str) -> Result<BloodPressureReadin
 
     let birdseye_lcd_only = extract_lcd_birdseye_view(&resized_image, lcd_coordinates)?;
     let reading = extract_reading(&birdseye_lcd_only)?;
-
-    //fill_poly_def(&mut resized_image, &best_candidate_led.coordinates, (255,0,0).into())?;
-    // highgui::imshow("testaroonie", &digits);
-
-    // let x = highgui::wait_key(0)?;
-
-    // highgui::destroy_all_windows();
 
     Ok(reading)
 }

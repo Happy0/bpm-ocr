@@ -3,8 +3,6 @@ use tokio;
 
 #[tokio::main]
 async fn main() {
-    println!("Testaroonie");
-
     let result = get_reading_from_file("/home/happy0/example7.jpg").await;
 
     println!("{:?}", result);

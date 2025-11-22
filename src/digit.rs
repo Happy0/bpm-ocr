@@ -1,6 +1,6 @@
 use opencv::{
     Error,
-    core::{Mat, MatTrait, MatTraitConst, Point, Rect2i, count_non_zero},
+    core::{Mat, MatTraitConst, Point, Rect2i, count_non_zero},
 };
 
 use crate::models::ProcessingError;
@@ -25,11 +25,6 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
     let total_filled_in_area = count_non_zero(&focused_digit)?;
     let total_area = full_digit_location.area();
 
-    println!(
-        "One check, total area ${:?}, total filled in ${:?}",
-        total_area, total_filled_in_area
-    );
-
     // If we're drawn a box around an area that's mostly filled in, then it's probably a 1
     if (total_filled_in_area as f32) / (total_area as f32) > 0.85 {
         return Ok(1);
@@ -38,9 +33,6 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
     let digit_width = ((full_digit_location.width as f32) * 0.25) as i32;
     let digit_height = ((full_digit_location.height as f32) * 0.15) as i32;
     let digit_height_centre = ((full_digit_location.height as f32) * 0.05) as i32;
-
-    // Notearoonies to self:
-    // I think I need to start from the top right of the bounding boxes
 
     let segment_locations = [
         ((0, 0), (full_digit_location.width, digit_height)), // top row,
@@ -82,14 +74,9 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
                 Point::new(full_digit_location.x + xB, full_digit_location.y + yB),
             );
 
-            println!("{:?}", rect);
-
             let focused_segment = image.roi(rect)?;
 
             let total_filled_in_area = count_non_zero(&focused_segment)?;
-
-            println!("Total filled in area{:?}", total_filled_in_area);
-            println!("Total area: {:?} ", rect.area());
 
             if ((total_filled_in_area as f32 / rect.area() as f32) > 0.65) {
                 return Ok(1);
@@ -97,8 +84,6 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
                 return Ok(0);
             }
         });
-
-    println!("Digit segments lit up: {:?}", digit_segments_lit_up_result);
 
     let digit_segments_lit_up: Result<Vec<i32>, Error> =
         digit_segments_lit_up_result.into_iter().collect();
