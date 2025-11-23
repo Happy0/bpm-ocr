@@ -173,11 +173,7 @@ fn get_rectangle_coordinates(
     }
 }
 
-pub async fn get_reading_from_file(
-    filename: &str,
-) -> Result<BloodPressureReading, ProcessingError> {
-    let gray_scale_mode: i32 = ImreadModes::IMREAD_GRAYSCALE.into();
-    let image = imgcodecs::imread(filename, gray_scale_mode)?;
+fn process_image(image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
 
     let mut resized_image = Mat::default();
 
@@ -222,4 +218,22 @@ pub async fn get_reading_from_file(
     let reading = extract_reading(&birdseye_lcd_only)?;
 
     Ok(reading)
+}
+
+pub fn get_reading_from_file(
+    filename: &str,
+) -> Result<BloodPressureReading, ProcessingError> {
+    let gray_scale_mode: i32 = ImreadModes::IMREAD_GRAYSCALE.into();
+    let image = imgcodecs::imread(filename, gray_scale_mode)?;
+
+    process_image(&image)
+}
+
+pub fn get_reading_from_buffer(
+    file_contents: Vec<u8>
+) -> Result<BloodPressureReading, ProcessingError> {
+    let contents = Vector::from_slice(&file_contents);
+    let image = imgcodecs::imdecode(&contents, ImreadModes::IMREAD_GRAYSCALE.into())?;
+
+    process_image(&image)
 }
