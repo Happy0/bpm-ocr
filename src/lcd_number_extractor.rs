@@ -3,9 +3,9 @@ use crate::{
 };
 use opencv::{
     Error,
-    core::{CV_8U, Mat, Point, Rect2i, Scalar, Size, Vector},
+    core::{Mat, Point, Rect2i, Size, Vector},
     imgproc::{
-        self, MORPH_ELLIPSE, MORPH_OPEN, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect, cvt_color_def, dilate_def, find_contours_def, get_structuring_element_def, morphology_ex_def, rectangle_def, threshold
+        self, THRESH_BINARY_INV, THRESH_OTSU, bounding_rect, dilate_def, find_contours_def, get_structuring_element_def, threshold
     },
 };
 
