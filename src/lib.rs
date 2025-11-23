@@ -10,11 +10,11 @@ use opencv::{imgcodecs, imgproc};
 
 use crate::debug::{debug_after_canny, debug_after_perspective_transform};
 use crate::lcd_number_extractor::extract_reading;
-use crate::models::{BloodPressureReading, ProblemIdentifyingReadings, ProcessingError};
+use crate::models::{BloodPressureReading, ReadingIdentificationError, ProcessingError};
+mod debug;
 mod digit;
 mod lcd_number_extractor;
 mod models;
-mod debug;
 
 #[derive(Clone, Debug)]
 struct LcdScreenCandidate {
@@ -160,21 +160,20 @@ fn locate_corners(points: (Point, Point, Point, Point)) -> models::RectangleCoor
 
 fn get_rectangle_coordinates(
     coordinates: &Vector<Point>,
-) -> Result<models::RectangleCoordinates, ProblemIdentifyingReadings> {
+) -> Result<models::RectangleCoordinates, ReadingIdentificationError> {
     match coordinates.as_slice() {
         [p1, p2, p3, p4] => {
             let coordinates = locate_corners((*p1, *p2, *p3, *p4));
 
             Ok(coordinates)
         }
-        _ => Err(models::ProblemIdentifyingReadings::InternalError(
-            "Internal error: LCD candidate did not have 4 points as expected".to_string(),
+        _ => Err(models::ReadingIdentificationError::InternalError(
+            "Internal error: LCD candidate did not have 4 points as expected",
         )),
     }
 }
 
 fn process_image(image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
-
     let mut resized_image = Mat::default();
 
     let interpolation: i32 = 0;
@@ -208,7 +207,7 @@ fn process_image(image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
     led_candidates.sort_by(|a1, a2| a1.area.total_cmp(&a2.area));
 
     let best_candidate_led: &LcdScreenCandidate = led_candidates.get(0).ok_or_else(|| {
-        ProcessingError::AppError(ProblemIdentifyingReadings::CouldNotIdentityLCDCandidate)
+        ProcessingError::AppError(ReadingIdentificationError::CouldNotIdentityLCDCandidate)
     })?;
 
     let lcd_coordinates = get_rectangle_coordinates(&best_candidate_led.coordinates)
@@ -220,9 +219,7 @@ fn process_image(image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
     Ok(reading)
 }
 
-pub fn get_reading_from_file(
-    filename: &str,
-) -> Result<BloodPressureReading, ProcessingError> {
+pub fn get_reading_from_file(filename: &str) -> Result<BloodPressureReading, ProcessingError> {
     let gray_scale_mode: i32 = ImreadModes::IMREAD_GRAYSCALE.into();
     let image = imgcodecs::imread(filename, gray_scale_mode)?;
 
@@ -230,7 +227,7 @@ pub fn get_reading_from_file(
 }
 
 pub fn get_reading_from_buffer(
-    file_contents: Vec<u8>
+    file_contents: Vec<u8>,
 ) -> Result<BloodPressureReading, ProcessingError> {
     let contents = Vector::from_slice(&file_contents);
     let image = imgcodecs::imdecode(&contents, ImreadModes::IMREAD_GRAYSCALE.into())?;

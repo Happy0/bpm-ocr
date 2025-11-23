@@ -1,18 +1,29 @@
-use std::{env, fs::create_dir_all, path::Path};
+use std::{env, fs::create_dir_all};
 
 use chrono::{self, Datelike, Timelike};
-use opencv::{core::{AccessFlag, CV_8U, Mat, Rect2i, Scalar, UMat, UMatTraitConst}, imgcodecs::imwrite_def, imgproc::{cvt_color_def, rectangle_def}};
+use opencv::{
+    core::{AccessFlag, CV_8U, Mat, Rect2i, Scalar, UMat, UMatTraitConst},
+    imgcodecs::imwrite_def,
+    imgproc::{cvt_color_def, rectangle_def},
+};
 
-use crate::models::{ProblemIdentifyingReadings, ProcessingError};
+use crate::models::{ReadingIdentificationError, ProcessingError};
 
 fn get_debug_filepath(filename: &str) -> Option<String> {
-    let temp_dir = env::temp_dir();
     let now = chrono::offset::Local::now();
-    
-    let mut folder_path = Path::new(&temp_dir).to_path_buf();
 
-    folder_path = folder_path.join(format!("bmp-ocr"));
-    folder_path = folder_path.join(format!("{}-{}-{}-{}-{}-{}", now.day(), now.month(), now.year(), now.hour(), now.minute(), now.second()));
+    let mut folder_path = env::temp_dir();
+
+    folder_path = folder_path.join("bmp-ocr");
+    folder_path = folder_path.join(format!(
+        "{}-{}-{}-{}-{}-{}",
+        now.day(),
+        now.month(),
+        now.year(),
+        now.hour(),
+        now.minute(),
+        now.second()
+    ));
 
     create_dir_all(&folder_path).unwrap();
 
@@ -24,7 +35,6 @@ fn get_debug_filepath(filename: &str) -> Option<String> {
 }
 
 fn write_file(image: &Mat, file_name: &str) -> Result<(), ProcessingError> {
-        
     let file_path = get_debug_filepath(&file_name);
 
     match file_path {
@@ -32,15 +42,16 @@ fn write_file(image: &Mat, file_name: &str) -> Result<(), ProcessingError> {
             imwrite_def(&path, &image)?;
             Ok(())
         }
-        None => {
-            Err(ProcessingError::AppError(ProblemIdentifyingReadings::InternalError("Could not create a temporary image for debugging for digit locations".to_string())))
-        }
+        None => Err(ProcessingError::AppError(
+            ReadingIdentificationError::InternalError(
+                "Could not create a temporary image for debugging for digit locations",
+            ),
+        )),
     }
 }
 
 pub fn debug_enabled() -> bool {
-    env
-        ::var("DEBUG_BPM_OCR")
+    env::var("DEBUG_BPM_OCR")
         .map(|value| value.to_ascii_lowercase() == "true")
         .unwrap_or(false)
 }
@@ -79,7 +90,10 @@ pub fn debug_digits_after_dilation(image: &Mat) -> Result<(), ProcessingError> {
     write_file(&image, "digits_after_dilation.jpeg")
 }
 
-pub fn debug_digit_locations(image: &Mat, digit_locations: &Vec<Rect2i>) -> Result<(), ProcessingError> {
+pub fn debug_digit_locations(
+    image: &Mat,
+    digit_locations: &Vec<Rect2i>,
+) -> Result<(), ProcessingError> {
     if !debug_enabled() {
         return Ok(());
     }
@@ -90,6 +104,6 @@ pub fn debug_digit_locations(image: &Mat, digit_locations: &Vec<Rect2i>) -> Resu
     for b in digit_locations {
         rectangle_def(&mut temp_image, *b, Scalar::new(0.0, 255.0, 0.0, 0.0))?;
     }
-    
+
     write_file(&temp_image, "digit_locations.jpeg")
 }

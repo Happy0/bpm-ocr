@@ -1,6 +1,6 @@
 use std::fs;
 
-use bpm_ocr::{get_reading_from_buffer};
+use bpm_ocr::get_reading_from_buffer;
 
 fn main() {
     let path = "/home/happy0/example11.jpg";

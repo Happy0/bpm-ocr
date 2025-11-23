@@ -4,8 +4,8 @@ use opencv::{
 };
 
 #[derive(Clone, Debug)]
-pub enum ProblemIdentifyingReadings {
-    InternalError(String),
+pub enum ReadingIdentificationError {
+    InternalError(&'static str),
     CouldNotIdentifyReadings,
     CouldNotIdentityLCDCandidate,
     UnexpectedNumberOfRows,
@@ -15,7 +15,7 @@ pub enum ProblemIdentifyingReadings {
 #[derive(Debug)]
 pub enum ProcessingError {
     ImageDetectionLibraryError(Error),
-    AppError(ProblemIdentifyingReadings),
+    AppError(ReadingIdentificationError),
 }
 
 impl From<Error> for ProcessingError {

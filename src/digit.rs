@@ -67,11 +67,11 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
 
     let digit_segments_lit_up_result: [Result<i32, Error>; 7] =
         segment_locations.map(|segment_locations| {
-            let ((xA, yA), (xB, yB)) = segment_locations;
+            let ((x_a, y_a), (x_b, y_b)) = segment_locations;
 
             let rect: opencv::core::Rect_<i32> = Rect2i::from_points(
-                Point::new(full_digit_location.x + xA, full_digit_location.y + yA),
-                Point::new(full_digit_location.x + xB, full_digit_location.y + yB),
+                Point::new(full_digit_location.x + x_a, full_digit_location.y + y_a),
+                Point::new(full_digit_location.x + x_b, full_digit_location.y + y_b),
             );
 
             let focused_segment = image.roi(rect)?;
@@ -100,7 +100,7 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
     match result {
         Some(num) => Ok(num.1),
         None => Err(ProcessingError::AppError(
-            crate::models::ProblemIdentifyingReadings::CouldNotProcessSegments,
+            crate::models::ReadingIdentificationError::CouldNotProcessSegments,
         )),
     }
 }
