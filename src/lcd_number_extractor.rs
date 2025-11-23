@@ -52,7 +52,7 @@ pub fn get_digit_borders(image: &Mat) -> Result<Vec<Rect2i>, ProcessingError> {
         })
         .collect::<Result<Vec<Rect2i>, Error>>()?;
 
-    // Filter out anything that is small enough to probably not be a digit or originals at the very edge of the screen
+    // Filter out anything that is small enough to probably not be a digit or originates at the very edge of the screen
     let result: Vec<Rect2i> = predicted_digits
         .into_iter()
         .filter(|possible_digit| possible_digit.y != 0 &&  possible_digit.x != 0 && possible_digit.height > 30)
