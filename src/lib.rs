@@ -10,7 +10,7 @@ use opencv::{imgcodecs, imgproc};
 
 use crate::debug::{debug_after_canny, debug_after_perspective_transform};
 use crate::lcd_number_extractor::extract_reading;
-use crate::models::{BloodPressureReading, ReadingIdentificationError, ProcessingError};
+use crate::models::{BloodPressureReading, ProcessingError, ReadingIdentificationError};
 mod debug;
 mod digit;
 mod lcd_number_extractor;

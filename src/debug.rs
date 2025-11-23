@@ -7,47 +7,40 @@ use opencv::{
     imgproc::{cvt_color_def, rectangle_def},
 };
 
-use crate::models::{ReadingIdentificationError, ProcessingError};
+use crate::models::{ProcessingError, ReadingIdentificationError};
 
-fn get_debug_filepath(filename: &str) -> Option<String> {
+fn get_debug_filepath(filename: &str) -> Result<String, ProcessingError> {
     let now = chrono::offset::Local::now();
 
     let mut folder_path = env::temp_dir();
 
     folder_path = folder_path.join("bmp-ocr");
-    folder_path = folder_path.join(format!(
-        "{}-{}-{}-{}-{}-{}",
-        now.day(),
-        now.month(),
-        now.year(),
-        now.hour(),
-        now.minute(),
-        now.second()
-    ));
+    folder_path = folder_path.join(now.format("%Y-%m-%d-%H-%M-%S").to_string());
 
-    create_dir_all(&folder_path).unwrap();
+    create_dir_all(&folder_path).map_err(|_| {
+        ProcessingError::AppError(ReadingIdentificationError::InternalError(
+            "Could not create a temporary folder for debugging image processing",
+        ))
+    })?;
 
     folder_path = folder_path.join(filename);
 
-    let result = folder_path.as_os_str().to_str();
-
-    result.map(|x| x.to_string())
+    folder_path
+        .as_os_str()
+        .to_str()
+        .ok_or(ProcessingError::AppError(
+            ReadingIdentificationError::InternalError(
+                "Could not create a name for a temporary folder for debugging image processing",
+            ),
+        ))
+        .map(|x| x.to_string())
 }
 
 fn write_file(image: &Mat, file_name: &str) -> Result<(), ProcessingError> {
-    let file_path = get_debug_filepath(&file_name);
+    let file_path = get_debug_filepath(&file_name)?;
+    imwrite_def(&file_path, &image)?;
 
-    match file_path {
-        Some(path) => {
-            imwrite_def(&path, &image)?;
-            Ok(())
-        }
-        None => Err(ProcessingError::AppError(
-            ReadingIdentificationError::InternalError(
-                "Could not create a temporary image for debugging for digit locations",
-            ),
-        )),
-    }
+    Ok(())
 }
 
 pub fn debug_enabled() -> bool {

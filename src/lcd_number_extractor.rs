@@ -1,7 +1,7 @@
 use crate::{
     debug::{self, debug_digits_after_dilation, debug_digits_before_morph},
     digit,
-    models::{BloodPressureReading, ReadingIdentificationError, ProcessingError, ReadingLocations},
+    models::{BloodPressureReading, ProcessingError, ReadingIdentificationError, ReadingLocations},
 };
 use opencv::{
     Error,
@@ -52,7 +52,7 @@ pub fn get_digit_borders(image: &Mat) -> Result<Vec<Rect2i>, ProcessingError> {
         })
         .filter(|possible_digit| match possible_digit {
             Err(_) => false,
-            Ok(rect) => rect.y != 0 &&  rect.x != 0 && rect.height > 30
+            Ok(rect) => rect.y != 0 && rect.x != 0 && rect.height > 30,
         })
         .collect::<Result<Vec<Rect2i>, Error>>()?;
 
@@ -84,11 +84,10 @@ fn group_by_similar_y_coordinate(
 
 pub fn get_reading_locations(mut digits: Vec<Rect2i>) -> Result<ReadingLocations, ProcessingError> {
     // Sort digits by their row
-    
+
     digits.sort_by(|vec1, vec2| vec1.y.cmp(&vec2.y));
 
-    let mut grouped_by_y_coordinate: Vec<Vec<Rect2i>> =
-        group_by_similar_y_coordinate(digits, 5);
+    let mut grouped_by_y_coordinate: Vec<Vec<Rect2i>> = group_by_similar_y_coordinate(digits, 5);
 
     // Sort numbers by their columns
     for group in grouped_by_y_coordinate.iter_mut() {
