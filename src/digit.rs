@@ -88,14 +88,13 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
     let digit_segments_lit_up: Result<Vec<i32>, Error> =
         digit_segments_lit_up_result.into_iter().collect();
 
-    let lit_up = digit_segments_lit_up?;
+    let lit_up = &digit_segments_lit_up?;
 
     let result = SEGMENTS_TO_NUMBER_MAP.iter().find(|segments| {
         return lit_up
-            .clone()
             .into_iter()
-            .zip(segments.0.to_vec())
-            .all(|(a, b)| a == b);
+            .zip(segments.0.iter())
+            .all(|(a, b)| *a == *b);
     });
 
     match result {

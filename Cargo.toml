@@ -5,5 +5,4 @@ edition = "2024"
 
 [dependencies]
 chrono = "0.4.42"
-imageproc = "0.25.0"
 opencv = "0.97.2"
