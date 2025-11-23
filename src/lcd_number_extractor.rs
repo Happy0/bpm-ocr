@@ -50,15 +50,13 @@ pub fn get_digit_borders(image: &Mat) -> Result<Vec<Rect2i>, ProcessingError> {
         .map(|contour| {
             return bounding_rect(&contour);
         })
+        .filter(|possible_digit| match possible_digit {
+            Err(_) => false,
+            Ok(rect) => rect.y != 0 &&  rect.x != 0 && rect.height > 30
+        })
         .collect::<Result<Vec<Rect2i>, Error>>()?;
 
-    // Filter out anything that is small enough to probably not be a digit or originates at the very edge of the screen
-    let result: Vec<Rect2i> = predicted_digits
-        .into_iter()
-        .filter(|possible_digit| possible_digit.y != 0 &&  possible_digit.x != 0 && possible_digit.height > 30)
-        .collect();
-
-    return Ok(result);
+    return Ok(predicted_digits);
 }
 
 fn group_by_similar_y_coordinate(
