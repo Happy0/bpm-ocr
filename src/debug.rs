@@ -1,7 +1,7 @@
 use std::{env, fs::create_dir_all, path::Path};
 
 use chrono::{self, Datelike, Timelike};
-use opencv::{core::{AccessFlag, CV_8U, Mat, Rect2i, Scalar, UMat, UMatTraitConst}, highgui, imgcodecs::imwrite_def, imgproc::{cvt_color_def, rectangle_def}};
+use opencv::{core::{AccessFlag, CV_8U, Mat, Rect2i, Scalar, UMat, UMatTraitConst}, imgcodecs::imwrite_def, imgproc::{cvt_color_def, rectangle_def}};
 
 use crate::models::{ProblemIdentifyingReadings, ProcessingError};
 

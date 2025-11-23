@@ -20,7 +20,7 @@ pub enum ProcessingError {
 
 impl From<Error> for ProcessingError {
     fn from(error: Error) -> Self {
-        return { Self::ImageDetectionLibraryError(error) };
+        return Self::ImageDetectionLibraryError(error);
     }
 }
 
