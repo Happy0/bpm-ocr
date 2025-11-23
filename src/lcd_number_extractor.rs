@@ -46,7 +46,7 @@ pub fn get_digit_borders(image: &Mat) -> Result<Vec<Rect2i>, ProcessingError> {
     )?;
 
     let predicted_digits: Vec<Rect2i> = contours_output
-        .iter()
+        .into_iter()
         .map(|contour| {
             return bounding_rect(&contour);
         })
@@ -54,11 +54,8 @@ pub fn get_digit_borders(image: &Mat) -> Result<Vec<Rect2i>, ProcessingError> {
 
     // Filter out anything that is small enough to probably not be a digit or originals at the very edge of the screen
     let result: Vec<Rect2i> = predicted_digits
-        .iter()
-        .filter(|possible_digit| possible_digit.y != 0)
-        .filter(|possible_digit| possible_digit.x != 0)
-        .filter(|possible_digit| possible_digit.height > 30)
-        .cloned()
+        .into_iter()
+        .filter(|possible_digit| possible_digit.y != 0 &&  possible_digit.x != 0 && possible_digit.height > 30)
         .collect();
 
     return Ok(result);
