@@ -12,10 +12,9 @@ use crate::models::{ProcessingError, ReadingIdentificationError};
 fn get_debug_filepath(filename: &str) -> Result<String, ProcessingError> {
     let now = chrono::offset::Local::now();
 
-    let mut folder_path = env::temp_dir();
-
-    folder_path = folder_path.join("bmp-ocr");
-    folder_path = folder_path.join(now.format("%Y-%m-%d-%H-%M-%S").to_string());
+    let mut folder_path = env::temp_dir()
+        .join("bmp-ocr")
+        .join(now.format("%Y-%m-%d-%H-%M-%S").to_string());
 
     create_dir_all(&folder_path).map_err(|_| {
         ProcessingError::AppError(ReadingIdentificationError::InternalError(
