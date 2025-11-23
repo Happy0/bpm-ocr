@@ -26,7 +26,6 @@ fn get_debug_filepath(filename: &str) -> Result<String, ProcessingError> {
     folder_path = folder_path.join(filename);
 
     folder_path
-        .as_os_str()
         .to_str()
         .ok_or(ProcessingError::AppError(
             ReadingIdentificationError::InternalError(
