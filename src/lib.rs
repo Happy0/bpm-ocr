@@ -8,6 +8,7 @@ use opencv::imgproc::{
 };
 use opencv::{imgcodecs, imgproc};
 
+use crate::debug::{debug_after_canny, debug_after_perspective_transform};
 use crate::lcd_number_extractor::extract_reading;
 use crate::models::{BloodPressureReading, ProblemIdentifyingReadings, ProcessingError};
 mod digit;
@@ -69,7 +70,7 @@ fn get_lcd_candidates(contours: &Vector<Vector<Point>>) -> Result<Vec<LcdScreenC
 fn extract_lcd_birdseye_view(
     image: &Mat,
     led_coordinates: models::RectangleCoordinates,
-) -> Result<Mat, Error> {
+) -> Result<Mat, ProcessingError> {
     let width_bottom = ((led_coordinates.bottom_right.x - led_coordinates.bottom_left.x).pow(2)
         + (led_coordinates.bottom_right.y - led_coordinates.bottom_left.y).pow(2))
     .isqrt();
@@ -129,6 +130,8 @@ fn extract_lcd_birdseye_view(
         &M,
         Size::new(max_width, max_height),
     )?;
+
+    debug_after_perspective_transform(&dest_image)?;
 
     Ok(dest_image)
 }
@@ -193,6 +196,8 @@ pub async fn get_reading_from_file(
 
     let mut edges = UMat::new_def();
     imgproc::canny_def(&blurred, &mut edges, 50., 200.)?;
+
+    debug_after_canny(&edges)?;
 
     let mut contours_output: Vector<Vector<Point>> = Vector::new();
     imgproc::find_contours(

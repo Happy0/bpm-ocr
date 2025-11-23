@@ -1,7 +1,7 @@
 use std::{env, fs::create_dir_all, path::Path};
 
 use chrono::{self, Datelike, Timelike};
-use opencv::{Error, core::{CV_8U, Mat, Rect2i, Scalar}, highgui, imgcodecs::imwrite_def, imgproc::{cvt_color_def, rectangle_def}};
+use opencv::{core::{AccessFlag, CV_8U, Mat, Rect2i, Scalar, UMat, UMatTraitConst}, highgui, imgcodecs::imwrite_def, imgproc::{cvt_color_def, rectangle_def}};
 
 use crate::models::{ProblemIdentifyingReadings, ProcessingError};
 
@@ -43,6 +43,24 @@ pub fn debug_enabled() -> bool {
         ::var("DEBUG_BPM_OCR")
         .map(|value| value.to_ascii_lowercase() == "true")
         .unwrap_or(false)
+}
+
+pub fn debug_after_canny(image: &UMat) -> Result<(), ProcessingError> {
+    if !debug_enabled() {
+        return Ok(());
+    }
+
+    let converted_to_mat = image.get_mat(AccessFlag::ACCESS_READ)?;
+
+    write_file(&converted_to_mat, "after_canny.jpeg")
+}
+
+pub fn debug_after_perspective_transform(image: &Mat) -> Result<(), ProcessingError> {
+    if !debug_enabled() {
+        return Ok(());
+    }
+
+    write_file(&image, "after_perspective_transform.jpeg")
 }
 
 pub fn debug_digits_before_morph(image: &Mat) -> Result<(), ProcessingError> {
