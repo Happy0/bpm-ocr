@@ -25,8 +25,6 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
     let total_filled_in_area = count_non_zero(&focused_digit)?;
     let total_area = full_digit_location.area();
 
-    println!("{}",  (total_filled_in_area as f32) / (total_area as f32));
-
     // If we're drawn a box around an area that's mostly filled in, then it's probably a 1
     if (total_filled_in_area as f32) / (total_area as f32) > 0.77 {
         return Ok(1);
@@ -101,12 +99,9 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
 
     match result {
         Some(num) => {
-            println!("{}", num.1);
-
             Ok(num.1)
         },
         None => {
-            println!("{:?}", lit_up);
         Err(ProcessingError::AppError(
             crate::models::ReadingIdentificationError::CouldNotProcessSegments,
         ))},
