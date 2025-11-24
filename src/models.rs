@@ -21,6 +21,7 @@ pub(crate) struct RejectedLcdScreenCandidate {
 pub(crate) struct LcdScreenCandidate {
     pub coordinates: Vector<Point>,
     pub area: f64,
+    pub contour: Vector<Point>,
 }
 
 pub enum LcdScreenCandidateResult {

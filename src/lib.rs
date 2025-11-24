@@ -36,6 +36,7 @@ fn get_lcd_candidate_points(contour: Vector<Point>) -> Result<LcdScreenCandidate
         let result = LcdScreenCandidate {
             coordinates: approx_curv_output,
             area: area,
+            contour: contour,
         };
 
         return Ok(LcdScreenCandidateResult::Success(result));
@@ -168,7 +169,7 @@ fn process_image(image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
     )?;
 
     let mut blurred = Mat::default();
-    imgproc::gaussian_blur_def(&resized_image, &mut blurred, Size::new(5, 5), 0.0)?;
+    imgproc::gaussian_blur_def(&resized_image, &mut blurred, Size::new(5, 5), 3.0)?;
 
     let mut edges = UMat::new_def();
     imgproc::canny_def(&blurred, &mut edges, 50., 200.)?;

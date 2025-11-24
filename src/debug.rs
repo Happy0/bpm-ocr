@@ -99,20 +99,20 @@ pub fn debug_lcd_contour_candidates(
     }
 
     for candidate in candidates {
-        println!("{:?}", candidate.coordinates);
+        let mut x: Vector<Vector<Point>> = Vector::new();
+        x.push(candidate.contour.clone());
 
-        let rectangle_coordinates = get_rectangle_coordinates(&candidate.coordinates).ok_or(
-            ProcessingError::AppError(models::ReadingIdentificationError::InternalError(
-                "Internal error: LCD candidate did not have 4 points as expected",
-            )),
+        draw_contours(
+            &mut colour,
+            &x,
+            0,
+            Scalar::new(0., 255.0, 0.0, 0.1),
+            1,
+            LINE_8.into(),
+            &Mat::default(),
+            i32::MAX,
+            Point::default(),
         )?;
-
-        let rect = Rect2i::from_points(
-            rectangle_coordinates.top_left,
-            rectangle_coordinates.bottom_right,
-        );
-
-        rectangle_def(&mut colour, rect, Scalar::new(0., 255.0, 0.0, 0.1))?
     }
 
     write_file(&colour, "contour_candidates.jpeg")
