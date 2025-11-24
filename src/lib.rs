@@ -54,7 +54,7 @@ fn partition_candidates(results: Vec<LcdScreenCandidateResult>) -> (Vec<LcdScree
 }
 
 // Looks for rectangle shapes in the image which could be the LCD screen
-fn get_lcd_candidates(image: &UMat, contours: Vector<Vector<Point>>) -> Result<Vec<LcdScreenCandidate>, ProcessingError> {
+fn get_lcd_candidates(image: &Mat, contours: Vector<Vector<Point>>) -> Result<Vec<LcdScreenCandidate>, ProcessingError> {
     let candidate_results: Vec<Result<LcdScreenCandidateResult, Error>> = contours
         .to_vec()
         .into_iter()
@@ -211,7 +211,7 @@ fn process_image(image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
         Point::new(0, 0),
     )?;
 
-    let mut led_candidates = get_lcd_candidates(&edges, contours_output)?;
+    let mut led_candidates = get_lcd_candidates(&blurred, contours_output)?;
     led_candidates.sort_by(|a1, a2| a1.area.total_cmp(&a2.area));
 
     let best_candidate_led: &LcdScreenCandidate = led_candidates.get(0).ok_or_else(|| {

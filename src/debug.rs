@@ -2,9 +2,9 @@ use std::{env, fs::create_dir_all};
 
 use chrono::{self, Datelike, Timelike};
 use opencv::{
-    core::{AccessFlag, CV_8U, Mat, Point, Rect2i, Scalar, UMat, UMatTraitConst, Vector},
+    core::{ACCESS_READ, AccessFlag, CV_8U, Mat, Point, Rect2i, Scalar, UMat, UMatTraitConst, Vector},
     imgcodecs::imwrite_def,
-    imgproc::{approx_poly_dp, arc_length, cvt_color_def, rectangle_def},
+    imgproc::{COLOR_BGR2GRAY, COLOR_GRAY2RGB, LINE_8, approx_poly_dp, arc_length, cvt_color, cvt_color_def, draw_contours, draw_contours_def, rectangle_def},
 };
 
 use crate::models::{LcdScreenCandidate, ProcessingError, ReadingIdentificationError, RejectedLcdScreenCandidate};
@@ -57,15 +57,26 @@ pub fn debug_after_canny(image: &UMat) -> Result<(), ProcessingError> {
     write_file(&converted_to_mat, "after_canny.jpeg")
 }
 
-pub fn debug_lcd_contour_candidates(image: &UMat, candidates: &Vec<LcdScreenCandidate>, rejections: Vec<RejectedLcdScreenCandidate>) -> Result<(), ProcessingError> {
+pub fn debug_lcd_contour_candidates(image: &Mat, candidates: &Vec<LcdScreenCandidate>, rejections: Vec<RejectedLcdScreenCandidate>) -> Result<(), ProcessingError> {
     if !debug_enabled() {
         return Ok(());
     }
 
-    println!("{:?}", candidates);
-    println!("{:?}", rejections);
+    let mut colour: Mat = Mat::default();
+
+    cvt_color(&image, &mut colour, COLOR_GRAY2RGB, 0)?;
+
+    for rejection in rejections {
+        let mut x: Vector<Vector<Point>> = Vector::new();
+        x.push(rejection.contour);
+
+        draw_contours(&mut colour, &x, 0, Scalar::new(255.0, 0.0, 0.0, 0.1), 1,         LINE_8.into(),
+        &Mat::default(),
+        i32::MAX,
+        Point::default() )?;
+    }
     
-    Ok(())
+    write_file(&colour, "contour_candidates.jpeg")
 }
 
 pub fn debug_after_perspective_transform(image: &Mat) -> Result<(), ProcessingError> {

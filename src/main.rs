@@ -3,7 +3,7 @@ use std::fs;
 use bpm_ocr::get_reading_from_buffer;
 
 fn main() {
-    let path = "/home/happy0/example9.jpg";
+    let path = "/home/happy0/example17.jpg";
     let bytes = fs::read(path).unwrap();
 
     let result = get_reading_from_buffer(bytes);
