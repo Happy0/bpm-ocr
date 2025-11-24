@@ -51,8 +51,8 @@ pub fn get_digit_borders(image: &Mat) -> Result<Vec<Rect2i>, ProcessingError> {
             return bounding_rect(&contour);
         })
         .filter(|possible_digit| match possible_digit {
-            Err(_) => false,
             Ok(rect) => rect.y != 0 && rect.x != 0 && rect.height > 30,
+            _ => true // Make sure errors are propagated
         })
         .collect::<Result<Vec<Rect2i>, Error>>()?;
 
