@@ -2,12 +2,12 @@ use std::{env, fs::create_dir_all};
 
 use chrono::{self, Datelike, Timelike};
 use opencv::{
-    core::{AccessFlag, CV_8U, Mat, Rect2i, Scalar, UMat, UMatTraitConst},
+    core::{AccessFlag, CV_8U, Mat, Point, Rect2i, Scalar, UMat, UMatTraitConst, Vector},
     imgcodecs::imwrite_def,
-    imgproc::{cvt_color_def, rectangle_def},
+    imgproc::{approx_poly_dp, arc_length, cvt_color_def, rectangle_def},
 };
 
-use crate::models::{ProcessingError, ReadingIdentificationError};
+use crate::models::{LcdScreenCandidate, ProcessingError, ReadingIdentificationError, RejectedLcdScreenCandidate};
 
 fn get_debug_filepath(filename: &str) -> Result<String, ProcessingError> {
     let now = chrono::offset::Local::now();
@@ -55,6 +55,14 @@ pub fn debug_after_canny(image: &UMat) -> Result<(), ProcessingError> {
     let converted_to_mat = image.get_mat(AccessFlag::ACCESS_READ)?;
 
     write_file(&converted_to_mat, "after_canny.jpeg")
+}
+
+pub fn debug_lcd_contour_candidates(candidates: &Vec<LcdScreenCandidate>, rejections: Vec<RejectedLcdScreenCandidate>) -> Result<(), ProcessingError> {
+    if !debug_enabled() {
+        return Ok(());
+    }
+    
+    Ok(())
 }
 
 pub fn debug_after_perspective_transform(image: &Mat) -> Result<(), ProcessingError> {

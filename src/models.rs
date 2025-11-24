@@ -1,6 +1,6 @@
 use opencv::{
     Error,
-    core::{Point, Rect2i},
+    core::{Point, Rect2i, Vector},
 };
 
 #[derive(Clone, Debug)]
@@ -10,6 +10,22 @@ pub enum ReadingIdentificationError {
     CouldNotIdentityLCDCandidate,
     UnexpectedNumberOfRows,
     CouldNotProcessSegments,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct RejectedLcdScreenCandidate {
+    pub contour: Vector<Point>
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct LcdScreenCandidate {
+    pub coordinates: Vector<Point>,
+    pub area: f64,
+}
+
+pub enum LcdScreenCandidateResult {
+    Success(LcdScreenCandidate),
+    Failure(RejectedLcdScreenCandidate)
 }
 
 #[derive(Debug)]

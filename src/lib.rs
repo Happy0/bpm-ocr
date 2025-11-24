@@ -1,28 +1,22 @@
 use std::cmp::max;
 
 use opencv::Error;
-use opencv::core::{Mat, Point, Point2f, Size, UMat, Vector, VectorToVec};
+use opencv::core::{Mat, Point, Point_, Point2f, Size, UMat, Vector, VectorToVec};
 use opencv::imgcodecs::ImreadModes;
 use opencv::imgproc::{
     approx_poly_dp, arc_length, get_perspective_transform_def, warp_perspective_def,
 };
 use opencv::{imgcodecs, imgproc};
 
-use crate::debug::{debug_after_canny, debug_after_perspective_transform};
+use crate::debug::{debug_after_canny, debug_after_perspective_transform, debug_lcd_contour_candidates};
 use crate::lcd_number_extractor::extract_reading;
-use crate::models::{BloodPressureReading, ProcessingError, ReadingIdentificationError};
+use crate::models::{BloodPressureReading, LcdScreenCandidate, LcdScreenCandidateResult, ProcessingError, ReadingIdentificationError, RejectedLcdScreenCandidate};
 mod debug;
 mod digit;
 mod lcd_number_extractor;
 mod models;
 
-#[derive(Clone, Debug)]
-struct LcdScreenCandidate {
-    coordinates: Vector<Point>,
-    area: f64,
-}
-
-fn get_lcd_candidate_points(contour: &Vector<Point>) -> Result<Option<LcdScreenCandidate>, Error> {
+fn get_lcd_candidate_points(contour: &Vector<Point>) -> Result<LcdScreenCandidateResult, Error> {
     let mut approx_curv_output: Vector<Point> = Vector::new();
 
     let perimeter = arc_length(&contour, true)?;
@@ -37,33 +31,47 @@ fn get_lcd_candidate_points(contour: &Vector<Point>) -> Result<Option<LcdScreenC
             area: area,
         };
 
-        return Ok(Some(result));
+        return Ok(LcdScreenCandidateResult::Success(result));
     } else {
-        return Ok(None);
+        return Ok(LcdScreenCandidateResult::Failure(RejectedLcdScreenCandidate { contour: contour.clone() }))
     }
 }
 
+fn partition_candidates(results: Vec<LcdScreenCandidateResult>) -> (Vec<LcdScreenCandidate>, Vec<RejectedLcdScreenCandidate>) {
+    let mut lcd_screen_candidates: Vec<LcdScreenCandidate> = Vec::new();
+    let mut rejected_screen_candidates: Vec<RejectedLcdScreenCandidate> = Vec::new();
+
+    for result in results.into_iter() {
+
+        match result {
+            LcdScreenCandidateResult::Failure(x) => rejected_screen_candidates.push(x),
+            LcdScreenCandidateResult::Success(x) => lcd_screen_candidates.push(x)
+        }
+
+    }
+
+    (lcd_screen_candidates, rejected_screen_candidates)
+}
+
 // Looks for rectangle shapes in the image which could be the LCD screen
-fn get_lcd_candidates(contours: &Vector<Vector<Point>>) -> Result<Vec<LcdScreenCandidate>, Error> {
-    let candidate_results: Vec<Result<Option<LcdScreenCandidate>, Error>> = contours
+fn get_lcd_candidates(contours: Vector<Vector<Point>>) -> Result<Vec<LcdScreenCandidate>, ProcessingError> {
+    let candidate_results: Vec<Result<LcdScreenCandidateResult, Error>> = contours
         .to_vec()
         .iter()
-        .map(|points| get_lcd_candidate_points(points))
+        .map(|points| {
+            get_lcd_candidate_points(points)
+        })
         .collect();
 
-    let candidates_or_error: Result<Vec<Option<LcdScreenCandidate>>, Error> =
+    let candidates_or_error: Result<Vec<LcdScreenCandidateResult>, Error> =
         candidate_results.into_iter().collect();
 
     let candidates = candidates_or_error?;
+    let (success_candidates, failure_candidates) = partition_candidates(candidates);
 
-    let result: Vec<LcdScreenCandidate> = candidates
-        .iter()
-        .into_iter()
-        .filter_map(Option::as_ref)
-        .cloned()
-        .collect();
+    debug_lcd_contour_candidates(&success_candidates, failure_candidates)?;
 
-    Ok(result)
+    Ok(success_candidates)
 }
 
 // Extracts only the LCD screen and transforms the image to a top down view of it
@@ -203,7 +211,7 @@ fn process_image(image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
         Point::new(0, 0),
     )?;
 
-    let mut led_candidates = get_lcd_candidates(&contours_output)?;
+    let mut led_candidates = get_lcd_candidates(contours_output)?;
     led_candidates.sort_by(|a1, a2| a1.area.total_cmp(&a2.area));
 
     let best_candidate_led: &LcdScreenCandidate = led_candidates.get(0).ok_or_else(|| {
