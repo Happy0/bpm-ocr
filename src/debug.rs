@@ -57,10 +57,13 @@ pub fn debug_after_canny(image: &UMat) -> Result<(), ProcessingError> {
     write_file(&converted_to_mat, "after_canny.jpeg")
 }
 
-pub fn debug_lcd_contour_candidates(candidates: &Vec<LcdScreenCandidate>, rejections: Vec<RejectedLcdScreenCandidate>) -> Result<(), ProcessingError> {
+pub fn debug_lcd_contour_candidates(image: &UMat, candidates: &Vec<LcdScreenCandidate>, rejections: Vec<RejectedLcdScreenCandidate>) -> Result<(), ProcessingError> {
     if !debug_enabled() {
         return Ok(());
     }
+
+    println!("{:?}", candidates);
+    println!("{:?}", rejections);
     
     Ok(())
 }

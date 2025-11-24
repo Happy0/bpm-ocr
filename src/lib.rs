@@ -16,7 +16,7 @@ mod digit;
 mod lcd_number_extractor;
 mod models;
 
-fn get_lcd_candidate_points(contour: &Vector<Point>) -> Result<LcdScreenCandidateResult, Error> {
+fn get_lcd_candidate_points(contour: Vector<Point>) -> Result<LcdScreenCandidateResult, Error> {
     let mut approx_curv_output: Vector<Point> = Vector::new();
 
     let perimeter = arc_length(&contour, true)?;
@@ -33,7 +33,7 @@ fn get_lcd_candidate_points(contour: &Vector<Point>) -> Result<LcdScreenCandidat
 
         return Ok(LcdScreenCandidateResult::Success(result));
     } else {
-        return Ok(LcdScreenCandidateResult::Failure(RejectedLcdScreenCandidate { contour: contour.clone() }))
+        return Ok(LcdScreenCandidateResult::Failure(RejectedLcdScreenCandidate { contour: contour }))
     }
 }
 
@@ -54,10 +54,10 @@ fn partition_candidates(results: Vec<LcdScreenCandidateResult>) -> (Vec<LcdScree
 }
 
 // Looks for rectangle shapes in the image which could be the LCD screen
-fn get_lcd_candidates(contours: Vector<Vector<Point>>) -> Result<Vec<LcdScreenCandidate>, ProcessingError> {
+fn get_lcd_candidates(image: &UMat, contours: Vector<Vector<Point>>) -> Result<Vec<LcdScreenCandidate>, ProcessingError> {
     let candidate_results: Vec<Result<LcdScreenCandidateResult, Error>> = contours
         .to_vec()
-        .iter()
+        .into_iter()
         .map(|points| {
             get_lcd_candidate_points(points)
         })
@@ -69,7 +69,7 @@ fn get_lcd_candidates(contours: Vector<Vector<Point>>) -> Result<Vec<LcdScreenCa
     let candidates = candidates_or_error?;
     let (success_candidates, failure_candidates) = partition_candidates(candidates);
 
-    debug_lcd_contour_candidates(&success_candidates, failure_candidates)?;
+    debug_lcd_contour_candidates(&image, &success_candidates, failure_candidates)?;
 
     Ok(success_candidates)
 }
@@ -211,7 +211,7 @@ fn process_image(image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
         Point::new(0, 0),
     )?;
 
-    let mut led_candidates = get_lcd_candidates(contours_output)?;
+    let mut led_candidates = get_lcd_candidates(&edges, contours_output)?;
     led_candidates.sort_by(|a1, a2| a1.area.total_cmp(&a2.area));
 
     let best_candidate_led: &LcdScreenCandidate = led_candidates.get(0).ok_or_else(|| {
