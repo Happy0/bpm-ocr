@@ -1,6 +1,6 @@
 use opencv::core::{Point, Vector};
 
-use crate::models::{self, ReadingIdentificationError};
+use crate::models::{self};
 
 fn locate_corners(points: (Point, Point, Point, Point)) -> models::RectangleCoordinates {
     let (p1, p2, p3, p4) = points;

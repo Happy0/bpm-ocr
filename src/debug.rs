@@ -1,24 +1,21 @@
 use std::{env, fs::create_dir_all};
 
-use chrono::{self, Datelike, Timelike};
+use chrono::{self};
 use opencv::{
     core::{
-        ACCESS_READ, AccessFlag, CV_8U, Mat, Point, Rect2i, Scalar, UMat, UMatTraitConst, Vector,
+        AccessFlag, CV_8U, Mat, Point, Rect2i, Scalar, UMat, UMatTraitConst, Vector,
     },
     imgcodecs::imwrite_def,
     imgproc::{
-        COLOR_BGR2GRAY, COLOR_GRAY2RGB, LINE_8, approx_poly_dp, arc_length, cvt_color,
-        cvt_color_def, draw_contours, draw_contours_def, rectangle, rectangle_def,
+        COLOR_GRAY2RGB, LINE_8, cvt_color,
+        cvt_color_def, draw_contours, rectangle_def,
     },
 };
 
-use crate::{
-    models::{
-        self, LcdScreenCandidate, ProcessingError, ReadingIdentificationError,
+use crate::models::{
+        LcdScreenCandidate, ProcessingError, ReadingIdentificationError,
         RejectedLcdScreenCandidate,
-    },
-    rectangle::get_rectangle_coordinates,
-};
+    };
 
 fn get_debug_filepath(filename: &str) -> Result<String, ProcessingError> {
     let now = chrono::offset::Local::now();

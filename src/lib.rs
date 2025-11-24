@@ -1,7 +1,7 @@
 use std::cmp::max;
 
 use opencv::Error;
-use opencv::core::{Mat, Point, Point_, Point2f, Size, UMat, Vector, VectorToVec};
+use opencv::core::{Mat, Point, Point2f, Size, UMat, Vector, VectorToVec};
 use opencv::imgcodecs::ImreadModes;
 use opencv::imgproc::{
     approx_poly_dp, arc_length, get_perspective_transform_def, warp_perspective_def,
