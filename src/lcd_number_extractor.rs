@@ -52,7 +52,7 @@ pub fn get_digit_borders(image: &Mat) -> Result<Vec<Rect2i>, ProcessingError> {
         })
         .filter(|possible_digit| match possible_digit {
             Ok(rect) => rect.y != 0 && rect.x != 0 && rect.height > 30,
-            _ => true // Make sure errors are propagated
+            _ => true, // Make sure errors are propagated
         })
         .collect::<Result<Vec<Rect2i>, Error>>()?;
 

@@ -2,12 +2,23 @@ use std::{env, fs::create_dir_all};
 
 use chrono::{self, Datelike, Timelike};
 use opencv::{
-    core::{ACCESS_READ, AccessFlag, CV_8U, Mat, Point, Rect2i, Scalar, UMat, UMatTraitConst, Vector},
+    core::{
+        ACCESS_READ, AccessFlag, CV_8U, Mat, Point, Rect2i, Scalar, UMat, UMatTraitConst, Vector,
+    },
     imgcodecs::imwrite_def,
-    imgproc::{COLOR_BGR2GRAY, COLOR_GRAY2RGB, LINE_8, approx_poly_dp, arc_length, cvt_color, cvt_color_def, draw_contours, draw_contours_def, rectangle_def},
+    imgproc::{
+        COLOR_BGR2GRAY, COLOR_GRAY2RGB, LINE_8, approx_poly_dp, arc_length, cvt_color,
+        cvt_color_def, draw_contours, draw_contours_def, rectangle, rectangle_def,
+    },
 };
 
-use crate::models::{LcdScreenCandidate, ProcessingError, ReadingIdentificationError, RejectedLcdScreenCandidate};
+use crate::{
+    models::{
+        self, LcdScreenCandidate, ProcessingError, ReadingIdentificationError,
+        RejectedLcdScreenCandidate,
+    },
+    rectangle::get_rectangle_coordinates,
+};
 
 fn get_debug_filepath(filename: &str) -> Result<String, ProcessingError> {
     let now = chrono::offset::Local::now();
@@ -57,7 +68,11 @@ pub fn debug_after_canny(image: &UMat) -> Result<(), ProcessingError> {
     write_file(&converted_to_mat, "after_canny.jpeg")
 }
 
-pub fn debug_lcd_contour_candidates(image: &Mat, candidates: &Vec<LcdScreenCandidate>, rejections: Vec<RejectedLcdScreenCandidate>) -> Result<(), ProcessingError> {
+pub fn debug_lcd_contour_candidates(
+    image: &Mat,
+    candidates: &Vec<LcdScreenCandidate>,
+    rejections: Vec<RejectedLcdScreenCandidate>,
+) -> Result<(), ProcessingError> {
     if !debug_enabled() {
         return Ok(());
     }
@@ -70,12 +85,36 @@ pub fn debug_lcd_contour_candidates(image: &Mat, candidates: &Vec<LcdScreenCandi
         let mut x: Vector<Vector<Point>> = Vector::new();
         x.push(rejection.contour);
 
-        draw_contours(&mut colour, &x, 0, Scalar::new(255.0, 0.0, 0.0, 0.1), 1,         LINE_8.into(),
-        &Mat::default(),
-        i32::MAX,
-        Point::default() )?;
+        draw_contours(
+            &mut colour,
+            &x,
+            0,
+            Scalar::new(255.0, 0.0, 0.0, 0.1),
+            1,
+            LINE_8.into(),
+            &Mat::default(),
+            i32::MAX,
+            Point::default(),
+        )?;
     }
-    
+
+    for candidate in candidates {
+        println!("{:?}", candidate.coordinates);
+
+        let rectangle_coordinates = get_rectangle_coordinates(&candidate.coordinates).ok_or(
+            ProcessingError::AppError(models::ReadingIdentificationError::InternalError(
+                "Internal error: LCD candidate did not have 4 points as expected",
+            )),
+        )?;
+
+        let rect = Rect2i::from_points(
+            rectangle_coordinates.top_left,
+            rectangle_coordinates.bottom_right,
+        );
+
+        rectangle_def(&mut colour, rect, Scalar::new(0., 255.0, 0.0, 0.1))?
+    }
+
     write_file(&colour, "contour_candidates.jpeg")
 }
 

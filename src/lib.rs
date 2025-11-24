@@ -8,13 +8,20 @@ use opencv::imgproc::{
 };
 use opencv::{imgcodecs, imgproc};
 
-use crate::debug::{debug_after_canny, debug_after_perspective_transform, debug_lcd_contour_candidates};
+use crate::debug::{
+    debug_after_canny, debug_after_perspective_transform, debug_lcd_contour_candidates,
+};
 use crate::lcd_number_extractor::extract_reading;
-use crate::models::{BloodPressureReading, LcdScreenCandidate, LcdScreenCandidateResult, ProcessingError, ReadingIdentificationError, RejectedLcdScreenCandidate};
+use crate::models::{
+    BloodPressureReading, LcdScreenCandidate, LcdScreenCandidateResult, ProcessingError,
+    ReadingIdentificationError, RejectedLcdScreenCandidate,
+};
+use crate::rectangle::get_rectangle_coordinates;
 mod debug;
 mod digit;
 mod lcd_number_extractor;
 mod models;
+mod rectangle;
 
 fn get_lcd_candidate_points(contour: Vector<Point>) -> Result<LcdScreenCandidateResult, Error> {
     let mut approx_curv_output: Vector<Point> = Vector::new();
@@ -33,34 +40,37 @@ fn get_lcd_candidate_points(contour: Vector<Point>) -> Result<LcdScreenCandidate
 
         return Ok(LcdScreenCandidateResult::Success(result));
     } else {
-        return Ok(LcdScreenCandidateResult::Failure(RejectedLcdScreenCandidate { contour: contour }))
+        return Ok(LcdScreenCandidateResult::Failure(
+            RejectedLcdScreenCandidate { contour: contour },
+        ));
     }
 }
 
-fn partition_candidates(results: Vec<LcdScreenCandidateResult>) -> (Vec<LcdScreenCandidate>, Vec<RejectedLcdScreenCandidate>) {
+fn partition_candidates(
+    results: Vec<LcdScreenCandidateResult>,
+) -> (Vec<LcdScreenCandidate>, Vec<RejectedLcdScreenCandidate>) {
     let mut lcd_screen_candidates: Vec<LcdScreenCandidate> = Vec::new();
     let mut rejected_screen_candidates: Vec<RejectedLcdScreenCandidate> = Vec::new();
 
     for result in results.into_iter() {
-
         match result {
             LcdScreenCandidateResult::Failure(x) => rejected_screen_candidates.push(x),
-            LcdScreenCandidateResult::Success(x) => lcd_screen_candidates.push(x)
+            LcdScreenCandidateResult::Success(x) => lcd_screen_candidates.push(x),
         }
-
     }
 
     (lcd_screen_candidates, rejected_screen_candidates)
 }
 
 // Looks for rectangle shapes in the image which could be the LCD screen
-fn get_lcd_candidates(image: &Mat, contours: Vector<Vector<Point>>) -> Result<Vec<LcdScreenCandidate>, ProcessingError> {
+fn get_lcd_candidates(
+    image: &Mat,
+    contours: Vector<Vector<Point>>,
+) -> Result<Vec<LcdScreenCandidate>, ProcessingError> {
     let candidate_results: Vec<Result<LcdScreenCandidateResult, Error>> = contours
         .to_vec()
         .into_iter()
-        .map(|points| {
-            get_lcd_candidate_points(points)
-        })
+        .map(|points| get_lcd_candidate_points(points))
         .collect();
 
     let candidates_or_error: Result<Vec<LcdScreenCandidateResult>, Error> =
@@ -144,43 +154,6 @@ fn extract_lcd_birdseye_view(
     Ok(dest_image)
 }
 
-fn locate_corners(points: (Point, Point, Point, Point)) -> models::RectangleCoordinates {
-    let (p1, p2, p3, p4) = points;
-    let mut point_array = [p1, p2, p3, p4];
-
-    point_array.sort_by(|point1, point2| (point1.x + point1.y).cmp(&(point2.x + point2.y)));
-
-    match point_array {
-        [p1, p2, p3, p4] => {
-            let top_left = p1;
-            let bottom_right = p4;
-            let (bottom_left, top_right) = if p2.x < p3.x { (p2, p3) } else { (p3, p2) };
-
-            return models::RectangleCoordinates {
-                top_left,
-                top_right,
-                bottom_left,
-                bottom_right,
-            };
-        }
-    }
-}
-
-fn get_rectangle_coordinates(
-    coordinates: &Vector<Point>,
-) -> Result<models::RectangleCoordinates, ReadingIdentificationError> {
-    match coordinates.as_slice() {
-        [p1, p2, p3, p4] => {
-            let coordinates = locate_corners((*p1, *p2, *p3, *p4));
-
-            Ok(coordinates)
-        }
-        _ => Err(models::ReadingIdentificationError::InternalError(
-            "Internal error: LCD candidate did not have 4 points as expected",
-        )),
-    }
-}
-
 fn process_image(image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
     let mut resized_image = Mat::default();
 
@@ -218,8 +191,11 @@ fn process_image(image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
         ProcessingError::AppError(ReadingIdentificationError::CouldNotIdentityLCDCandidate)
     })?;
 
-    let lcd_coordinates = get_rectangle_coordinates(&best_candidate_led.coordinates)
-        .map_err(ProcessingError::AppError)?;
+    let lcd_coordinates = get_rectangle_coordinates(&best_candidate_led.coordinates).ok_or(
+        ProcessingError::AppError(models::ReadingIdentificationError::InternalError(
+            "Internal error: LCD candidate did not have 4 points as expected",
+        )),
+    )?;
 
     let birdseye_lcd_only = extract_lcd_birdseye_view(&resized_image, lcd_coordinates)?;
     let reading = extract_reading(&birdseye_lcd_only)?;

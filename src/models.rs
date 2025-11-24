@@ -14,7 +14,7 @@ pub enum ReadingIdentificationError {
 
 #[derive(Clone, Debug)]
 pub(crate) struct RejectedLcdScreenCandidate {
-    pub contour: Vector<Point>
+    pub contour: Vector<Point>,
 }
 
 #[derive(Clone, Debug)]
@@ -25,7 +25,7 @@ pub(crate) struct LcdScreenCandidate {
 
 pub enum LcdScreenCandidateResult {
     Success(LcdScreenCandidate),
-    Failure(RejectedLcdScreenCandidate)
+    Failure(RejectedLcdScreenCandidate),
 }
 
 #[derive(Debug)]
