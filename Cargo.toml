@@ -13,5 +13,5 @@ description = "A library for attempting to extract a blood pressure monitor read
 homepage = "https://www.github.com/happy0/bpm-ocr"
 repository = "https://www.github.com/happy0/bpm-ocr"
 readme = "README.md"
-keywords = ["OCR", "opencv", "health", "heart"]
-categories = "Computer Vision"
+keywords = ["ocr", "opencv"]
+categories = "computer-vision"
