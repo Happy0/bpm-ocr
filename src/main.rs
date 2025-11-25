@@ -1,4 +1,3 @@
-use std::env;
 use std::{fs, sync::Arc};
 use bpm_ocr::BloodPressureReadingExtractor;
 
