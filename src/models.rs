@@ -13,12 +13,12 @@ pub enum ReadingIdentificationError {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct RejectedLcdScreenCandidate {
+pub struct RejectedLcdScreenCandidate {
     pub contour: Vector<Point>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct LcdScreenCandidate {
+pub struct LcdScreenCandidate {
     pub coordinates: Vector<Point>,
     pub area: f64,
     pub contour: Vector<Point>,
