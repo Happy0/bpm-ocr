@@ -8,11 +8,11 @@ use crate::debug::BpmOcrDebugOutputter;
 use crate::lcd_number_extractor::LcdNumberExtractor;
 use crate::lcd_screen_extractor::LcdScreenExtractor;
 use crate::models::{BloodPressureReading, ProcessingError};
-pub mod models;
 pub mod debug;
 mod digit_extractor;
 mod lcd_number_extractor;
 mod lcd_screen_extractor;
+pub mod models;
 mod rectangle;
 
 pub struct BloodPressureReadingExtractor<T: BpmOcrDebugOutputter> {

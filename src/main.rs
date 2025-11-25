@@ -1,14 +1,10 @@
-use std::{fs};
 use bpm_ocr::BloodPressureReadingExtractor;
+use std::fs;
 
-use bpm_ocr::debug::BpmOcrDebugOutputter;
 use bpm_ocr::debug::TempFolderDebugger;
 
 fn main() {
-   let now = chrono::offset::Local::now();
-   let folder_path = now.format("%Y-%m-%d-%H-%M-%S").to_string();
-
-    let debugger: TempFolderDebugger = TempFolderDebugger::new(&folder_path, true);
+    let debugger: TempFolderDebugger = TempFolderDebugger::using_timestamp_folder_name(true);
 
     let blood_pressure_extractor = BloodPressureReadingExtractor::new(debugger);
 

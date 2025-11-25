@@ -8,7 +8,9 @@ use opencv::{
 
 use crate::models;
 
-use models::{LcdScreenCandidate, ProcessingError, ReadingIdentificationError, RejectedLcdScreenCandidate};
+use models::{
+    LcdScreenCandidate, ProcessingError, ReadingIdentificationError, RejectedLcdScreenCandidate,
+};
 
 pub struct TempFolderDebugger {
     folder_name: String,
@@ -122,6 +124,18 @@ pub trait BpmOcrDebugOutputter {
         }
 
         self.output(&temp_image, "digit_locations")
+    }
+}
+
+impl TempFolderDebugger {
+    pub fn using_timestamp_folder_name(debug_enabled: bool) -> Self {
+        let now = chrono::offset::Local::now();
+        let folder_name: String = now.format("%Y-%m-%d-%H-%M-%S").to_string();
+
+        TempFolderDebugger {
+            folder_name,
+            debug_enabled,
+        }
     }
 }
 
