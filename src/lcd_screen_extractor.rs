@@ -1,4 +1,4 @@
-use std::{cmp::max, sync::Arc};
+use std::{cmp::max, rc::Rc};
 
 use opencv::{
     Error,
@@ -18,13 +18,13 @@ use crate::{
 };
 
 pub(crate) struct LcdScreenExtractor<T: BpmOcrDebugOutputter> {
-    debugger: Arc<T>,
+    debugger: Rc<T>,
 }
 
 impl<T: BpmOcrDebugOutputter> LcdScreenExtractor<T> {
-    pub fn new(d: &Arc<T>) -> Self {
+    pub fn new(d: &Rc<T>) -> Self {
         LcdScreenExtractor {
-            debugger: Arc::clone(d),
+            debugger: Rc::clone(d),
         }
     }
 

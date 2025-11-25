@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use opencv::core::{Mat, Size, Vector};
 use opencv::imgcodecs::ImreadModes;
@@ -21,9 +21,11 @@ pub struct BloodPressureReadingExtractor<T: BpmOcrDebugOutputter> {
 }
 
 impl<T: BpmOcrDebugOutputter> BloodPressureReadingExtractor<T> {
-    pub fn new(debugger: &Arc<T>) -> Self {
-        let screen_extractor = LcdScreenExtractor::new(debugger);
-        let screen_number_extractor = LcdNumberExtractor::new(debugger);
+    pub fn new(debugger: T) -> Self {
+        let shared_debugger = Rc::new(debugger);
+
+        let screen_extractor = LcdScreenExtractor::new(&shared_debugger);
+        let screen_number_extractor = LcdNumberExtractor::new(&shared_debugger);
 
         BloodPressureReadingExtractor {
             screen_extractor,

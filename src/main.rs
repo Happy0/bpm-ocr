@@ -1,4 +1,4 @@
-use std::{fs, sync::Arc};
+use std::{fs};
 use bpm_ocr::BloodPressureReadingExtractor;
 
 use bpm_ocr::debug::BpmOcrDebugOutputter;
@@ -9,9 +9,8 @@ fn main() {
    let folder_path = now.format("%Y-%m-%d-%H-%M-%S").to_string();
 
     let debugger: TempFolderDebugger = TempFolderDebugger::new(&folder_path, true);
-    let shared_debugger = Arc::new(debugger);
 
-    let blood_pressure_extractor = BloodPressureReadingExtractor::new(&shared_debugger);
+    let blood_pressure_extractor = BloodPressureReadingExtractor::new(debugger);
 
     let path = "/home/happy0/example9.jpg";
     let bytes = fs::read(path).unwrap();

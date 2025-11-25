@@ -10,8 +10,6 @@ use crate::models;
 
 use models::{LcdScreenCandidate, ProcessingError, ReadingIdentificationError, RejectedLcdScreenCandidate};
 
-
-
 pub struct TempFolderDebugger {
     folder_name: String,
     debug_enabled: bool,

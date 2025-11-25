@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{rc::Rc};
 
 use crate::{
     debug::BpmOcrDebugOutputter,
@@ -15,13 +15,13 @@ use opencv::{
 };
 
 pub(crate) struct LcdNumberExtractor<T: BpmOcrDebugOutputter> {
-    debugger: Arc<T>,
+    debugger: Rc<T>,
 }
 
 impl<T: BpmOcrDebugOutputter> LcdNumberExtractor<T> {
-    pub fn new(d: &Arc<T>) -> Self {
+    pub fn new(d: &Rc<T>) -> Self {
         LcdNumberExtractor {
-            debugger: Arc::clone(d),
+            debugger: Rc::clone(d),
         }
     }
 
