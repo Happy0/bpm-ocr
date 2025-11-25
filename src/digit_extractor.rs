@@ -98,12 +98,9 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
     });
 
     match result {
-        Some(num) => {
-            Ok(num.1)
-        },
-        None => {
-        Err(ProcessingError::AppError(
+        Some(num) => Ok(num.1),
+        None => Err(ProcessingError::AppError(
             crate::models::ReadingIdentificationError::CouldNotProcessSegments,
-        ))},
+        )),
     }
 }
