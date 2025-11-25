@@ -56,7 +56,7 @@ pub(crate) struct ReadingLocations {
     pub pulse_region: Vec<Rect2i>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct BloodPressureReading {
     pub systolic: i32,
     pub diastolic: i32,
