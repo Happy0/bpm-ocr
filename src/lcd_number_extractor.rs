@@ -141,7 +141,7 @@ impl<T: BpmOcrDebugOutputter> LcdNumberExtractor<T> {
         let mut result: i32 = 0;
         for (index, digit) in digits.iter().enumerate() {
             let digit_result: i32 = digit_extractor::parse_digit(&image, *digit)?;
-            let multiplier: u32 = (digits.len() - (index + 1)).try_into().map_err(|x| {
+            let multiplier: u32 = (digits.len() - (index + 1)).try_into().map_err(|_| {
                 ProcessingError::AppError(ReadingIdentificationError::InternalError(
                     "Unexpected number conversion issue",
                 ))
