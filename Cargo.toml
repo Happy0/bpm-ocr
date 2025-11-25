@@ -6,3 +6,12 @@ edition = "2024"
 [dependencies]
 chrono = "0.4.42"
 opencv = "0.97.2"
+
+[package]
+license = "MIT"
+description = "A library for attempting to extract a blood pressure monitor reading from an image using opencv."
+homepage = "https://www.github.com/happy0/bpm-ocr"
+repository = "https://www.github.com/happy0/bpm-ocr"
+readme = "README.md"
+keywords = ["OCR", "opencv", "health", "heart"]
+categories = "Computer Vision"
