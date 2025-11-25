@@ -84,7 +84,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_success() {
+    fn test_success_photo_at_angle() {
         let debugger: UnsafeTempFolderDebugger = UnsafeTempFolderDebugger::new("test_success", true);
         let testfile = Vec::from(include_bytes!("./test_resources/example_at_angle.jpg"));
         let extractor = BloodPressureReadingExtractor::new(debugger);
@@ -93,6 +93,23 @@ mod tests {
             systolic: 133,
             diastolic: 93,
             pulse: 65
+        };
+
+        let result = extractor.get_reading_from_buffer(testfile).unwrap();
+
+        assert_eq!(result, expected_result);
+    }
+
+    #[test]
+    fn test_success_topdown_photo() {
+        let debugger: UnsafeTempFolderDebugger = UnsafeTempFolderDebugger::new("test_topdown_photo", true);
+        let testfile = Vec::from(include_bytes!("./test_resources/example_top_down.jpg"));
+        let extractor = BloodPressureReadingExtractor::new(debugger);
+
+        let expected_result = BloodPressureReading {
+            systolic: 131,
+            diastolic: 88,
+            pulse: 77
         };
 
         let result = extractor.get_reading_from_buffer(testfile).unwrap();
