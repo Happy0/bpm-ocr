@@ -55,6 +55,8 @@ impl<T: BpmOcrDebugOutputter> BloodPressureReadingExtractor<T> {
         Ok(reading)
     }
 
+    /// Attempts to extract a blood pressure reading from a photo file of a blood pressure monitor screen
+    /// * `filename` - the path to the photo file
     pub fn get_reading_from_file(
         self: &Self,
         filename: &str,
@@ -65,6 +67,8 @@ impl<T: BpmOcrDebugOutputter> BloodPressureReadingExtractor<T> {
         self.process_image(&image)
     }
 
+    /// Attempts to extract a blood pressure reading from a byte buffer containing a photo file of a blood pressure monitor screen
+    /// * `filename` - the byte buffer with the photo file
     pub fn get_reading_from_buffer(
         self: &Self,
         file_contents: Vec<u8>,
