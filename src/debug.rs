@@ -17,6 +17,8 @@ pub struct TempFolderDebugger {
     debug_enabled: bool,
 }
 
+pub struct NoDebug {}
+
 pub trait BpmOcrDebugOutputter {
     fn new(unique_session_name: &str, debug_enabled: bool) -> Self;
     fn output(&self, image: &Mat, stage_description: &str) -> Result<(), ProcessingError>;
@@ -173,5 +175,19 @@ impl BpmOcrDebugOutputter for TempFolderDebugger {
 
     fn debug_enabled(&self) -> bool {
         self.debug_enabled
+    }
+}
+
+impl BpmOcrDebugOutputter for NoDebug {
+    fn new(_: &str, _: bool) -> Self {
+        NoDebug {  }
+    }
+
+    fn output(&self, _: &Mat, _: &str) -> Result<(), ProcessingError> {
+        Ok(())
+    }
+
+    fn debug_enabled(&self) -> bool {
+        false
     }
 }
