@@ -79,13 +79,13 @@ impl<T: BpmOcrDebugOutputter> BloodPressureReadingExtractor<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::debug::TempFolderDebugger;
+    use crate::debug::UnsafeTempFolderDebugger;
 
     use super::*;
 
     #[test]
     fn test_success() {
-        let debugger: TempFolderDebugger = TempFolderDebugger::new("test_success", true);
+        let debugger: UnsafeTempFolderDebugger = UnsafeTempFolderDebugger::new("test_success", true);
         let testfile = Vec::from(include_bytes!("./test_resources/example_at_angle.jpg"));
         let extractor = BloodPressureReadingExtractor::new(debugger);
 
@@ -98,7 +98,6 @@ mod tests {
         let result = extractor.get_reading_from_buffer(testfile).unwrap();
 
         assert_eq!(result, expected_result);
-        
     }
 
 

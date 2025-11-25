@@ -12,7 +12,15 @@ use models::{
     LcdScreenCandidate, ProcessingError, ReadingIdentificationError, RejectedLcdScreenCandidate,
 };
 
-pub struct TempFolderDebugger {
+/**  
+ * Named unsafe as if the same debugger instance is used across different executions of BloodPressureReadingExtractor
+ * then the files will be overwritten with new values and if it is used across concurrent executions then the files may
+ * be corrupted or an error may be thrown. A new BloodPressureReadingExtractor should be constructed for each run when
+ * using this debugger.
+ * 
+ * This debugger writes the debug image files to the system temporary folder. The folder lives inside bpm-ocr/${folder_name}
+*/
+pub struct UnsafeTempFolderDebugger {
     folder_name: String,
     debug_enabled: bool,
 }
@@ -129,21 +137,21 @@ pub trait BpmOcrDebugOutputter {
     }
 }
 
-impl TempFolderDebugger {
+impl UnsafeTempFolderDebugger {
     pub fn using_timestamp_folder_name(debug_enabled: bool) -> Self {
         let now = chrono::offset::Local::now();
         let folder_name: String = now.format("%Y-%m-%d-%H-%M-%S").to_string();
 
-        TempFolderDebugger {
+        UnsafeTempFolderDebugger {
             folder_name,
             debug_enabled,
         }
     }
 }
 
-impl BpmOcrDebugOutputter for TempFolderDebugger {
+impl BpmOcrDebugOutputter for UnsafeTempFolderDebugger {
     fn new(unique_session_name: &str, debug_enabled: bool) -> Self {
-        TempFolderDebugger {
+        UnsafeTempFolderDebugger {
             folder_name: unique_session_name.to_string(),
             debug_enabled: debug_enabled,
         }
