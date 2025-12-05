@@ -32,6 +32,14 @@ pub trait BpmOcrDebugOutputter {
     fn output(&self, image: &Mat, stage_description: &str) -> Result<(), ProcessingError>;
     fn debug_enabled(&self) -> bool;
 
+    fn debug_original_picture(&self, image: &Mat) -> Result<(), ProcessingError> {
+        if !self.debug_enabled() {
+            return Ok(());
+        }
+
+        self.output(&image, "original_image")
+    }
+
     fn debug_after_canny(&self, image: &UMat) -> Result<(), ProcessingError> {
         if !self.debug_enabled() {
             return Ok(());

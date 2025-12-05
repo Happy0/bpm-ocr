@@ -8,7 +8,7 @@ use crate::models::ProcessingError;
 static SEGMENTS_TO_NUMBER_MAP: [([i32; 7], i32); 10] = [
     ([1, 1, 1, 0, 1, 1, 1], 0),
     ([0, 0, 1, 0, 0, 1, 0], 1),
-    ([1, 0, 1, 1, 1, 1, 0], 2),
+    ([1, 0, 1, 1, 1, 0, 1], 2),
     ([1, 0, 1, 1, 0, 1, 1], 3),
     ([0, 1, 1, 1, 0, 1, 0], 4),
     ([1, 1, 0, 1, 0, 1, 1], 5),
@@ -21,12 +21,13 @@ static SEGMENTS_TO_NUMBER_MAP: [([i32; 7], i32); 10] = [
 
 pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, ProcessingError> {
     let focused_digit = image.roi(full_digit_location)?;
-
     let total_filled_in_area = count_non_zero(&focused_digit)?;
     let total_area = full_digit_location.area();
 
-    // If we're drawn a box around an area that's mostly filled in, then it's probably a 1
-    if (total_filled_in_area as f32) / (total_area as f32) > 0.77 {
+    let width_to_height_ratio = full_digit_location.width  as f32/ full_digit_location.height as f32;
+
+    // If we're drawn a box around an area that's mostly filled in and its a thin width, then it's probably a 1
+    if (total_filled_in_area as f32) / (total_area as f32) > 0.77 && width_to_height_ratio < 0.30 {
         return Ok(1);
     }
 

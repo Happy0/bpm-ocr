@@ -18,6 +18,7 @@ mod rectangle;
 pub struct BloodPressureReadingExtractor<T: BpmOcrDebugOutputter> {
     screen_extractor: LcdScreenExtractor<T>,
     screen_number_extractor: LcdNumberExtractor<T>,
+    debugger: Rc<T>
 }
 
 impl<T: BpmOcrDebugOutputter> BloodPressureReadingExtractor<T> {
@@ -30,10 +31,13 @@ impl<T: BpmOcrDebugOutputter> BloodPressureReadingExtractor<T> {
         BloodPressureReadingExtractor {
             screen_extractor,
             screen_number_extractor,
+            debugger: shared_debugger
         }
     }
 
     fn process_image(self: &Self, image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
+        self.debugger.debug_original_picture(&image)?;
+
         let mut resized_image = Mat::default();
 
         let interpolation: i32 = 0;
@@ -121,5 +125,21 @@ mod tests {
         assert_eq!(result, expected_result);
     }
 
+    #[test]
+    fn test_with_2_digit() {
+        let debugger: UnsafeTempFolderDebugger = UnsafeTempFolderDebugger::new("test_with_2_digit", true);
+        let testfile = Vec::from(include_bytes!("./test_resources/contour_candidates.jpeg"));
+        let extractor = BloodPressureReadingExtractor::new(debugger);
+
+        let expected_result = BloodPressureReading {
+            systolic: 123,
+            diastolic: 85,
+            pulse: 68
+        };
+
+        let result = extractor.get_reading_from_buffer(testfile).unwrap();
+
+        assert_eq!(result, expected_result);
+    }
 
 }
