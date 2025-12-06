@@ -1,6 +1,6 @@
 [package]
 name = "bpm-ocr"
-version = "0.2.0"
+version = "1.0.0"
 edition = "2024"
 license = "MIT"
 description = "A library for attempting to extract a blood pressure monitor reading from an image using opencv."
@@ -11,5 +11,5 @@ keywords = ["ocr", "opencv"]
 categories = ["computer-vision"]
 
 [dependencies]
-chrono = "0.4.42"
 opencv = "0.97.2"
+uuid = {version = "1.19.0", features = ["v4"]}

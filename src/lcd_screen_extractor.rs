@@ -1,4 +1,4 @@
-use std::{cmp::max, rc::Rc};
+use std::{cmp::max, sync::Arc};
 
 use opencv::{
     Error,
@@ -18,13 +18,15 @@ use crate::{
 };
 
 pub(crate) struct LcdScreenExtractor<T: BpmOcrDebugOutputter> {
-    debugger: Rc<T>,
+    debugger: Arc<T>,
+    debug_session_name: String,
 }
 
 impl<T: BpmOcrDebugOutputter> LcdScreenExtractor<T> {
-    pub fn new(d: &Rc<T>) -> Self {
+    pub fn new(debugger: Arc<T>, debug_session_name: &str) -> Self {
         LcdScreenExtractor {
-            debugger: Rc::clone(d),
+            debugger: debugger,
+            debug_session_name: debug_session_name.to_owned(),
         }
     }
 
@@ -139,7 +141,7 @@ impl<T: BpmOcrDebugOutputter> LcdScreenExtractor<T> {
         )?;
 
         self.debugger
-            .debug_after_perspective_transform(&dest_image)?;
+            .debug_after_perspective_transform(&self.debug_session_name, &dest_image)?;
 
         Ok(dest_image)
     }
@@ -161,7 +163,8 @@ impl<T: BpmOcrDebugOutputter> LcdScreenExtractor<T> {
         let candidates = candidates_or_error?;
         let (success_candidates, failure_candidates) = self.partition_candidates(candidates);
 
-        self.debugger.debug_lcd_contour_candidates(
+        let _ = &self.debugger.debug_lcd_contour_candidates(
+            &self.debug_session_name,
             &image_blurred,
             &success_candidates,
             failure_candidates,
@@ -177,7 +180,8 @@ impl<T: BpmOcrDebugOutputter> LcdScreenExtractor<T> {
         let mut edges = UMat::new_def();
         imgproc::canny_def(&blurred, &mut edges, 50., 200.)?;
 
-        self.debugger.debug_after_canny(&edges)?;
+        self.debugger
+            .debug_after_canny(&self.debug_session_name, &edges)?;
 
         let mut contours_output: Vector<Vector<Point>> = Vector::new();
         imgproc::find_contours(

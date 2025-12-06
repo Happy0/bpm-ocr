@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use opencv::core::{Mat, Size, Vector};
 use opencv::imgcodecs::ImreadModes;
@@ -7,7 +7,7 @@ use opencv::{imgcodecs, imgproc};
 use crate::debug::BpmOcrDebugOutputter;
 use crate::lcd_number_extractor::LcdNumberExtractor;
 use crate::lcd_screen_extractor::LcdScreenExtractor;
-use crate::models::{BloodPressureReading, ProcessingError};
+use crate::models::{BloodPressureReading, DebuggerTrace, ProcessingError};
 pub mod debug;
 mod digit_extractor;
 mod lcd_number_extractor;
@@ -18,25 +18,31 @@ mod rectangle;
 pub struct BloodPressureReadingExtractor<T: BpmOcrDebugOutputter> {
     screen_extractor: LcdScreenExtractor<T>,
     screen_number_extractor: LcdNumberExtractor<T>,
-    debugger: Rc<T>
+    debugging_session: DebuggerTrace<T>,
 }
 
 impl<T: BpmOcrDebugOutputter> BloodPressureReadingExtractor<T> {
-    pub fn new(debugger: T) -> Self {
-        let shared_debugger = Rc::new(debugger);
-
-        let screen_extractor = LcdScreenExtractor::new(&shared_debugger);
-        let screen_number_extractor = LcdNumberExtractor::new(&shared_debugger);
+    pub fn new(debugger_session: DebuggerTrace<T>) -> Self {
+        let screen_extractor = LcdScreenExtractor::new(
+            Arc::clone(&debugger_session.debugger),
+            &debugger_session.unique_trace_name,
+        );
+        let screen_number_extractor = LcdNumberExtractor::new(
+            Arc::clone(&debugger_session.debugger),
+            &debugger_session.unique_trace_name,
+        );
 
         BloodPressureReadingExtractor {
             screen_extractor,
             screen_number_extractor,
-            debugger: shared_debugger
+            debugging_session: debugger_session,
         }
     }
 
     fn process_image(self: &Self, image: &Mat) -> Result<BloodPressureReading, ProcessingError> {
-        self.debugger.debug_original_picture(&image)?;
+        self.debugging_session
+            .debugger
+            .debug_original_picture(&self.debugging_session.unique_trace_name, &image)?;
 
         let mut resized_image = Mat::default();
 
@@ -58,88 +64,94 @@ impl<T: BpmOcrDebugOutputter> BloodPressureReadingExtractor<T> {
 
         Ok(reading)
     }
-
-    /// Attempts to extract a blood pressure reading from a photo file of a blood pressure monitor screen
-    /// * `filename` - the path to the photo file
-    pub fn get_reading_from_file(
-        self: &Self,
-        filename: &str,
-    ) -> Result<BloodPressureReading, ProcessingError> {
-        let gray_scale_mode: i32 = ImreadModes::IMREAD_GRAYSCALE.into();
-        let image = imgcodecs::imread(filename, gray_scale_mode)?;
-
-        self.process_image(&image)
-    }
-
-    /// Attempts to extract a blood pressure reading from a byte buffer containing a photo file of a blood pressure monitor screen
-    /// * `filename` - the byte buffer with the photo file
-    pub fn get_reading_from_buffer(
-        self: &Self,
-        file_contents: Vec<u8>,
-    ) -> Result<BloodPressureReading, ProcessingError> {
-        let contents = Vector::from_slice(&file_contents);
-        let image = imgcodecs::imdecode(&contents, ImreadModes::IMREAD_GRAYSCALE.into())?;
-
-        self.process_image(&image)
-    }
 }
 
+/// Attempts to extract a blood pressure reading from a photo file of a blood pressure monitor screen
+/// * `filename` - the path to the photo file
+/// * `debugger` - the debugger trace session to output debug images with
+pub fn get_reading_from_file<T: BpmOcrDebugOutputter>(
+    filename: &str,
+    debugger: DebuggerTrace<T>,
+) -> Result<BloodPressureReading, ProcessingError> {
+    let extractor: BloodPressureReadingExtractor<T> = BloodPressureReadingExtractor::new(debugger);
+
+    let gray_scale_mode: i32 = ImreadModes::IMREAD_GRAYSCALE.into();
+    let image = imgcodecs::imread(filename, gray_scale_mode)?;
+
+    extractor.process_image(&image)
+}
+
+/// Attempts to extract a blood pressure reading from a byte buffer containing a photo file of a blood pressure monitor screen
+/// * `filename` - the byte buffer with the photo file
+/// * `debugger` - the debugger trace session to output debug images with
+pub fn get_reading_from_buffer<T: BpmOcrDebugOutputter>(
+    file_contents: Vec<u8>,
+    debugger: DebuggerTrace<T>,
+) -> Result<BloodPressureReading, ProcessingError> {
+    let extractor: BloodPressureReadingExtractor<T> = BloodPressureReadingExtractor::new(debugger);
+
+    let contents = Vector::from_slice(&file_contents);
+    let image = imgcodecs::imdecode(&contents, ImreadModes::IMREAD_GRAYSCALE.into())?;
+
+    extractor.process_image(&image)
+}
 
 #[cfg(test)]
 mod tests {
-    use crate::debug::UnsafeTempFolderDebugger;
-
     use super::*;
+    use crate::debug::TempFolderDebugger;
 
     #[test]
     fn test_success_photo_at_angle() {
-        let debugger: UnsafeTempFolderDebugger = UnsafeTempFolderDebugger::new("test_success", true);
+        let debug_session: DebuggerTrace<TempFolderDebugger> =
+            DebuggerTrace::temp_folder_session("test_success");
+
         let testfile = Vec::from(include_bytes!("./test_resources/example_at_angle.jpg"));
-        let extractor = BloodPressureReadingExtractor::new(debugger);
 
         let expected_result = BloodPressureReading {
             systolic: 133,
             diastolic: 93,
-            pulse: 65
+            pulse: 65,
         };
 
-        let result = extractor.get_reading_from_buffer(testfile).unwrap();
+        let result = get_reading_from_buffer(testfile, debug_session).unwrap();
 
         assert_eq!(result, expected_result);
     }
 
     #[test]
     fn test_success_topdown_photo() {
-        let debugger: UnsafeTempFolderDebugger = UnsafeTempFolderDebugger::new("test_topdown_photo", true);
+        let debug_session: DebuggerTrace<TempFolderDebugger> =
+            DebuggerTrace::temp_folder_session("test_topdown_photo");
+
         let testfile = Vec::from(include_bytes!("./test_resources/example_top_down.jpg"));
-        let extractor = BloodPressureReadingExtractor::new(debugger);
 
         let expected_result = BloodPressureReading {
             systolic: 131,
             diastolic: 88,
-            pulse: 77
+            pulse: 77,
         };
 
-        let result = extractor.get_reading_from_buffer(testfile).unwrap();
+        let result = get_reading_from_buffer(testfile, debug_session).unwrap();
 
         assert_eq!(result, expected_result);
     }
 
     #[test]
     fn test_with_2_digit() {
-        let debugger: UnsafeTempFolderDebugger = UnsafeTempFolderDebugger::new("test_with_2_digit", true);
+        let debug_session: DebuggerTrace<TempFolderDebugger> =
+            DebuggerTrace::temp_folder_session("contour_candidates");
+
         let testfile = Vec::from(include_bytes!("./test_resources/contour_candidates.jpeg"));
-        let extractor = BloodPressureReadingExtractor::new(debugger);
 
         let expected_result = BloodPressureReading {
             systolic: 123,
             diastolic: 85,
-            pulse: 68
+            pulse: 68,
         };
 
-        let result = extractor.get_reading_from_buffer(testfile).unwrap();
+        let result = get_reading_from_buffer(testfile, debug_session).unwrap();
 
         assert_eq!(result, expected_result);
     }
-
 }

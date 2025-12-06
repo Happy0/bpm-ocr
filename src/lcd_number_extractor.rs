@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{
     debug::BpmOcrDebugOutputter,
@@ -15,13 +15,15 @@ use opencv::{
 };
 
 pub(crate) struct LcdNumberExtractor<T: BpmOcrDebugOutputter> {
-    debugger: Rc<T>,
+    debugger: Arc<T>,
+    debug_session_name: String,
 }
 
 impl<T: BpmOcrDebugOutputter> LcdNumberExtractor<T> {
-    pub fn new(d: &Rc<T>) -> Self {
+    pub fn new(debugger: Arc<T>, unique_trace_name: &str) -> Self {
         LcdNumberExtractor {
-            debugger: Rc::clone(d),
+            debugger: debugger,
+            debug_session_name: unique_trace_name.to_owned(),
         }
     }
 
@@ -36,7 +38,8 @@ impl<T: BpmOcrDebugOutputter> LcdNumberExtractor<T> {
             THRESH_BINARY_INV | THRESH_OTSU,
         )?;
 
-        self.debugger.debug_digits_before_morph(&thresholed_image)?;
+        self.debugger
+            .debug_digits_before_morph(&self.debug_session_name, &thresholed_image)?;
 
         let mut dilated_image = Mat::default();
 
@@ -44,7 +47,8 @@ impl<T: BpmOcrDebugOutputter> LcdNumberExtractor<T> {
         let dilation_kernel = get_structuring_element_def(imgproc::MORPH_RECT, Size::new(3, 3))?;
         dilate_def(&thresholed_image, &mut dilated_image, &dilation_kernel)?;
 
-        self.debugger.debug_digits_after_dilation(&dilated_image)?;
+        self.debugger
+            .debug_digits_after_dilation(&self.debug_session_name, &dilated_image)?;
 
         return Ok(dilated_image);
     }
@@ -162,8 +166,11 @@ impl<T: BpmOcrDebugOutputter> LcdNumberExtractor<T> {
 
         let digit_borders = self.get_digit_borders(&highlighted_digits)?;
 
-        self.debugger
-            .debug_digit_locations(&highlighted_digits, &digit_borders)?;
+        self.debugger.debug_digit_locations(
+            &self.debug_session_name,
+            &highlighted_digits,
+            &digit_borders,
+        )?;
 
         let reading_locations = self.get_reading_locations(digit_borders)?;
 

@@ -12,46 +12,51 @@ use models::{
     LcdScreenCandidate, ProcessingError, ReadingIdentificationError, RejectedLcdScreenCandidate,
 };
 
-/**  
- * Named unsafe as if the same debugger instance is used across different executions of BloodPressureReadingExtractor
- * then the files will be overwritten with new values and if it is used across concurrent executions then the files may
- * be corrupted or an error may be thrown. A new BloodPressureReadingExtractor should be constructed for each run when
- * using this debugger.
- * 
- * This debugger writes the debug image files to the system temporary folder. The folder lives inside bpm-ocr/${folder_name}
-*/
-pub struct UnsafeTempFolderDebugger {
-    folder_name: String,
+pub struct TempFolderDebugger {
     debug_enabled: bool,
 }
 
 pub struct NoDebug {}
 
 pub trait BpmOcrDebugOutputter {
-    fn new(unique_session_name: &str, debug_enabled: bool) -> Self;
-    fn output(&self, image: &Mat, stage_description: &str) -> Result<(), ProcessingError>;
+    fn new(debug_enabled: bool) -> Self;
+    fn output(
+        &self,
+        unique_trace_id: &str,
+        image: &Mat,
+        stage_description: &str,
+    ) -> Result<(), ProcessingError>;
     fn debug_enabled(&self) -> bool;
 
-    fn debug_original_picture(&self, image: &Mat) -> Result<(), ProcessingError> {
+    fn debug_original_picture(
+        &self,
+        unique_trace_id: &str,
+        image: &Mat,
+    ) -> Result<(), ProcessingError> {
         if !self.debug_enabled() {
             return Ok(());
         }
 
-        self.output(&image, "original_image")
+        self.output(unique_trace_id, &image, "original_image")
     }
 
-    fn debug_after_canny(&self, image: &UMat) -> Result<(), ProcessingError> {
+    fn debug_after_canny(
+        &self,
+        unique_trace_id: &str,
+        image: &UMat,
+    ) -> Result<(), ProcessingError> {
         if !self.debug_enabled() {
             return Ok(());
         }
 
         let converted_to_mat = image.get_mat(AccessFlag::ACCESS_READ)?;
 
-        self.output(&converted_to_mat, "after_canny")
+        self.output(unique_trace_id, &converted_to_mat, "after_canny")
     }
 
     fn debug_lcd_contour_candidates(
         &self,
+        unique_trace_id: &str,
         image: &Mat,
         candidates: &Vec<LcdScreenCandidate>,
         rejections: Vec<RejectedLcdScreenCandidate>,
@@ -98,35 +103,48 @@ pub trait BpmOcrDebugOutputter {
             )?;
         }
 
-        self.output(&colour, "contour_candidates")
+        self.output(unique_trace_id, &colour, "contour_candidates")
     }
 
-    fn debug_after_perspective_transform(&self, image: &Mat) -> Result<(), ProcessingError> {
+    fn debug_after_perspective_transform(
+        &self,
+        unique_trace_id: &str,
+        image: &Mat,
+    ) -> Result<(), ProcessingError> {
         if !self.debug_enabled() {
             return Ok(());
         }
 
-        self.output(&image, "after_perspective_transform")
+        self.output(unique_trace_id, &image, "after_perspective_transform")
     }
 
-    fn debug_digits_before_morph(&self, image: &Mat) -> Result<(), ProcessingError> {
+    fn debug_digits_before_morph(
+        &self,
+        unique_trace_id: &str,
+        image: &Mat,
+    ) -> Result<(), ProcessingError> {
         if !self.debug_enabled() {
             return Ok(());
         }
 
-        self.output(image, "digits_before_morph")
+        self.output(unique_trace_id, image, "digits_before_morph")
     }
 
-    fn debug_digits_after_dilation(&self, image: &Mat) -> Result<(), ProcessingError> {
+    fn debug_digits_after_dilation(
+        &self,
+        unique_trace_id: &str,
+        image: &Mat,
+    ) -> Result<(), ProcessingError> {
         if !self.debug_enabled() {
             return Ok(());
         }
 
-        self.output(&image, "digits_after_dilation")
+        self.output(unique_trace_id, &image, "digits_after_dilation")
     }
 
     fn debug_digit_locations(
         &self,
+        unique_trace_id: &str,
         image: &Mat,
         digit_locations: &Vec<Rect2i>,
     ) -> Result<(), ProcessingError> {
@@ -141,32 +159,24 @@ pub trait BpmOcrDebugOutputter {
             rectangle_def(&mut temp_image, *b, Scalar::new(0.0, 255.0, 0.0, 0.0))?;
         }
 
-        self.output(&temp_image, "digit_locations")
+        self.output(unique_trace_id, &temp_image, "digit_locations")
     }
 }
 
-impl UnsafeTempFolderDebugger {
-    pub fn using_timestamp_folder_name(debug_enabled: bool) -> Self {
-        let now = chrono::offset::Local::now();
-        let folder_name: String = now.format("%Y-%m-%d-%H-%M-%S").to_string();
-
-        UnsafeTempFolderDebugger {
-            folder_name,
-            debug_enabled,
-        }
-    }
-}
-
-impl BpmOcrDebugOutputter for UnsafeTempFolderDebugger {
-    fn new(unique_session_name: &str, debug_enabled: bool) -> Self {
-        UnsafeTempFolderDebugger {
-            folder_name: unique_session_name.to_string(),
+impl BpmOcrDebugOutputter for TempFolderDebugger {
+    fn new(debug_enabled: bool) -> Self {
+        TempFolderDebugger {
             debug_enabled: debug_enabled,
         }
     }
 
-    fn output(&self, image: &Mat, stage_description: &str) -> Result<(), ProcessingError> {
-        let folder_path = env::temp_dir().join("bmp-ocr").join(&self.folder_name);
+    fn output(
+        &self,
+        unique_trace_id: &str,
+        image: &Mat,
+        stage_description: &str,
+    ) -> Result<(), ProcessingError> {
+        let folder_path = env::temp_dir().join("bpm-ocr").join(&unique_trace_id);
 
         // TODO: create at construction
         create_dir_all(&folder_path).map_err(|_| {
@@ -195,11 +205,11 @@ impl BpmOcrDebugOutputter for UnsafeTempFolderDebugger {
 }
 
 impl BpmOcrDebugOutputter for NoDebug {
-    fn new(_: &str, _: bool) -> Self {
-        NoDebug {  }
+    fn new(_: bool) -> Self {
+        NoDebug {}
     }
 
-    fn output(&self, _: &Mat, _: &str) -> Result<(), ProcessingError> {
+    fn output(&self, _: &str, _: &Mat, _: &str) -> Result<(), ProcessingError> {
         Ok(())
     }
 

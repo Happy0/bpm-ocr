@@ -24,7 +24,8 @@ pub fn parse_digit(image: &Mat, full_digit_location: Rect2i) -> Result<i32, Proc
     let total_filled_in_area = count_non_zero(&focused_digit)?;
     let total_area = full_digit_location.area();
 
-    let width_to_height_ratio = full_digit_location.width  as f32/ full_digit_location.height as f32;
+    let width_to_height_ratio =
+        full_digit_location.width as f32 / full_digit_location.height as f32;
 
     // If we're drawn a box around an area that's mostly filled in and its a thin width, then it's probably a 1
     if (total_filled_in_area as f32) / (total_area as f32) > 0.77 && width_to_height_ratio < 0.30 {
